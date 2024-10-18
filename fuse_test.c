@@ -8,6 +8,7 @@
 #include <time.h>
 #include <errno.h>
 #include <ctype.h>
+#include <stddef.h>
 
 #include "fuse_test.h"
 
@@ -19,13 +20,25 @@ enum {
 	FIOC_FILE,
 };
 
+static struct data {
+	const char *name;	
+}data;
+
+#define OPTION(t, p)                           \
+    { t, offsetof(struct data, p), 1 }
+static const struct fuse_opt data_spec[] = {
+	OPTION("--name=%s", name),
+	FUSE_OPT_END
+};
+
+
+
 static void *fioc_buf;
 static size_t fioc_size;
 
 static int fioc_resize(size_t new_size)
 {
 	void *new_buf;
-	printf("sdfasd\n\n");
 	if (new_size == fioc_size)
 		return 0;
 
@@ -52,11 +65,18 @@ static int fioc_expand(size_t new_size)
 
 static int fioc_file_type(const char *path)
 {
-	printf("sdfasd\n\n");
+	
 	if (strcmp(path, "/") == 0)
 		return FIOC_ROOT;
-	if (strcmp(path, "/" FIOC_NAME) == 0)
+	
+	char* newPath = malloc(strlen(data.name) + 2);
+	strcpy(newPath, "/");
+	strcat(newPath, data.name);
+	if (strcmp(path, newPath) == 0){
+		free(newPath);
 		return FIOC_FILE;
+	}
+	free(newPath);
 	return FIOC_NONE;
 }
 
@@ -148,7 +168,7 @@ static int fioc_write(const char *path, const char *buf, size_t size,
 	printf("wert\n\n");
 	FILE *fp;
 	int status;
-	fp = popen("mail -s 'CS270 testing' vikaskalagi@ucsb.edu", "w");
+	fp = popen("mail -s 'CS270 testing' rkerur@ucsb.edu", "w");
 	
 	size_t r1 = fwrite(buf, sizeof(buf[0]), size, fp);
 
@@ -161,7 +181,8 @@ static int fioc_write(const char *path, const char *buf, size_t size,
 	// if (fioc_file_type(path) != FIOC_FILE)
 	// 	return -EINVAL;
 
-	return fioc_do_write(buf, size, offset);
+	//return fioc_do_write(buf, size, offset);
+	return size;
 }
 
 static int fioc_truncate(const char *path, off_t size,
@@ -188,7 +209,7 @@ static int fioc_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	filler(buf, ".", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 	filler(buf, "..", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
-	filler(buf, FIOC_NAME, NULL, 0, FUSE_FILL_DIR_DEFAULTS);
+	filler(buf, data.name, NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 
 	return 0;
 }
@@ -232,6 +253,15 @@ static const struct fuse_operations fioc_oper = {
 
 int main(int argc, char *argv[])
 {
-	printf("indid main func\n\n");
-	return fuse_main(argc, argv, &fioc_oper, NULL);
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+	data.name = strdup("DefaultFile");
+	if (fuse_opt_parse(&args, &data, data_spec, NULL) == -1)
+		return 1;
+
+	printf(data.name);
+
+	int ret = fuse_main(args.argc, args.argv, &fioc_oper, NULL);
+	fuse_opt_free_args(&args);
+	return ret;
 }
