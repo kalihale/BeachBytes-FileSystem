@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <dirent.h>
 
 #include "fuse_test.h"
 
@@ -19,19 +20,6 @@ enum {
 	FIOC_ROOT,
 	FIOC_FILE,
 };
-
-static struct data {
-	const char *name;	
-}data;
-
-#define OPTION(t, p)                           \
-    { t, offsetof(struct data, p), 1 }
-static const struct fuse_opt data_spec[] = {
-	OPTION("--name=%s", name),
-	FUSE_OPT_END
-};
-
-
 
 static void *fioc_buf;
 static size_t fioc_size;
@@ -57,7 +45,6 @@ static int fioc_resize(size_t new_size)
 
 static int fioc_expand(size_t new_size)
 {
-	printf("sdfasd\n\n");
 	if (new_size > fioc_size)
 		return fioc_resize(new_size);
 	return 0;
@@ -68,23 +55,17 @@ static int fioc_file_type(const char *path)
 	
 	if (strcmp(path, "/") == 0)
 		return FIOC_ROOT;
-	
-	char* newPath = malloc(strlen(data.name) + 2);
-	strcpy(newPath, "/");
-	strcat(newPath, data.name);
-	if (strcmp(path, newPath) == 0){
-		free(newPath);
+	if (strcmp(path, "/" FIOC_NAME) == 0){
 		return FIOC_FILE;
 	}
-	free(newPath);
 	return FIOC_NONE;
 }
 
 static int fioc_getattr(const char *path, struct stat *stbuf,
 			struct fuse_file_info *fi)
 {
-	(void) fi;
-	printf("sdfasd\n\n");
+	printf("Getting attribute for path %s\n", path);
+
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
 	stbuf->st_atime = stbuf->st_mtime = time(NULL);
@@ -109,10 +90,8 @@ static int fioc_getattr(const char *path, struct stat *stbuf,
 
 static int fioc_open(const char *path, struct fuse_file_info *fi)
 {
-	(void) fi;
-	printf("fioc_open\n\n");
-	// if (fioc_file_type(path) != FIOC_NONE)
-	// 	return 0;
+	
+	printf("PATH PASSED IN %s", path);
 	return 0;
 }
 
@@ -209,7 +188,6 @@ static int fioc_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	filler(buf, ".", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 	filler(buf, "..", NULL, 0, FUSE_FILL_DIR_DEFAULTS);
-	filler(buf, data.name, NULL, 0, FUSE_FILL_DIR_DEFAULTS);
 
 	return 0;
 }
@@ -240,6 +218,10 @@ static int fioc_ioctl(const char *path, unsigned int cmd, void *arg,
 	return -EINVAL;
 }
 
+
+static int fioc_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
+	return 0;
+}
 static const struct fuse_operations fioc_oper = {
 	.getattr	= fioc_getattr,
 	.readdir	= fioc_readdir,
@@ -249,19 +231,11 @@ static const struct fuse_operations fioc_oper = {
 	.write		= fioc_write,
 	.ioctl		= fioc_ioctl,
 	.create = fuse_example_create,
+	.utimens = fioc_utimens,
 };
 
 int main(int argc, char *argv[])
 {
-	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	data.name = strdup("DefaultFile");
-	if (fuse_opt_parse(&args, &data, data_spec, NULL) == -1)
-		return 1;
-
-	printf(data.name);
-
-	int ret = fuse_main(args.argc, args.argv, &fioc_oper, NULL);
-	fuse_opt_free_args(&args);
-	return ret;
+	return fuse_main(argc, argv, &fioc_oper, NULL);
 }
