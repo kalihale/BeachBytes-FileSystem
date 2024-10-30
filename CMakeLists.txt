@@ -8,12 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 set(header
-    #test.h
-    fuse_test.h
+    fuse_interface.h
 )
 set(src
-    #test.cpp 
-    fuse_test.c
+    fuse_interface.c
 	 
  )
 
