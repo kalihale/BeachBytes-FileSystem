@@ -10,10 +10,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(header
     #test.h
     fuse_test.h
+    layerZero.h
+    common_config.h
+    fileStructure.h
 )
 set(src
     #test.cpp 
     fuse_test.c
+    layerZero.cpp
 	 
  )
 
