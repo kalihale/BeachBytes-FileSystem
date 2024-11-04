@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(header
     #test.h
     fuse_test.h
+    inode.h
     layerZero.h
     common_config.h
     fileStructure.h
@@ -17,6 +18,8 @@ set(header
 set(src
     #test.cpp 
     fuse_test.c
+    inode.cpp
+    inode.h
     layerZero.cpp
 	 
  )
@@ -31,7 +34,9 @@ link_directories(${FUSE3_LIBRARY_DIRS})
 add_definitions(${FUSE3_CFLAGS_OTHER})
 
 # Add executable and link FUSE3 libraries
-add_executable(cs270 ${src} ${header})
+add_executable(cs270 ${src} ${header}
+        inode.h
+        inode.h)
 
 
 target_link_libraries(cs270 ${FUSE3_LIBRARIES})
