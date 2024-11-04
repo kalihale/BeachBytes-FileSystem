@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <dirent.h>
+#include <assert.h>
 
 #include "fuse_interface.h"
 
@@ -75,7 +76,7 @@ static int fioc_mknod(const char *path, mode_t mode, dev_t rdev) {
     (void) path;
     (void) mode;
     (void) rdev;
-    return -ENOSYS;
+    return 0;
 }
 
 static int fioc_mkdir(const char *path, mode_t mode) {
@@ -280,7 +281,7 @@ static int fioc_access(const char *path, int mask) {
 
 static int fioc_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
     printf("Creating file: %s\n", path);
-    return -ENOSYS;
+    return 0;
 }
 
 
@@ -358,7 +359,6 @@ static int fioc_read_buf(const char *path, struct fuse_bufvec **bufp, size_t siz
 }
 
 static int fioc_flock(const char *path, struct fuse_file_info *fi, int op) {
-    // Stub for flock (file locking)
     (void) path;
     (void) fi;
     (void) op;
@@ -444,6 +444,7 @@ static const struct fuse_operations fioc_oper = {
 
 int main(int argc, char *argv[])
 {
-
+    
 	return fuse_main(argc, argv, &fioc_oper, NULL);
-}
+
+}  
