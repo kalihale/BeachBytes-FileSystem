@@ -8,20 +8,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 set(header
-    #test.h
-    fuse_test.h
+    fuse_interface.h
     inode.h
     layerZero.h
     common_config.h
     fileStructure.h
 )
 set(src
-    #test.cpp 
-    fuse_test.c
     inode.cpp
     inode.h
     layerZero.cpp
-	 
+    fuse_interface.c
+
  )
 
 # Find fuse3 with pkg-config
