@@ -19,11 +19,12 @@
 #define BLOCK_COUNT (FS_SIZE/BLOCK_SIZE)
 #define ADDRESS_SIZE 8
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
+#define INODES_PER_BLOCK 4 //TODO Should change later
 
 #define INODE_BLOCK_COUNT (BLOCK_COUNT * 0.015) // 1.5% blocks reserved for inodes TODO: Check if it is okay
-#define NUM_OF_DATA_BLOCKS (BLOCK_COUNT - INODE_BLOCK_COUNT - 1) // -1 for superblock
+#define NUM_OF_DATA_BLOCKS ((unsigned int)(BLOCK_COUNT - INODE_BLOCK_COUNT - 1))
 
-typedef int64_t sType;
+typedef uint32_t sType;
 
 
 #endif

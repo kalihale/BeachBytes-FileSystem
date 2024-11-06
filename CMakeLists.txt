@@ -12,6 +12,7 @@ set(header
     layerZero.h
     common_config.h
     fileStructure.h
+    inode.h
 )
 set(src
     inode.cpp

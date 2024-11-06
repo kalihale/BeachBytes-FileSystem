@@ -41,7 +41,7 @@ bool fs_read_block(sType blockid, char *buffer)
 
     if (isBlockOutOfRange(blockid))
     {
-        printf(" !!!!!!!!!! Block id out of range: %ld !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
+        printf(" !!!!!!!!!! Block id out of range: %u !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
         return false;
     }
 
@@ -49,7 +49,7 @@ bool fs_read_block(sType blockid, char *buffer)
     sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
     if(lseek_status == -1)
     {
-        printf(" reading Falied, lseek to offset %lu failed for block id %lu\n", offset, blockid);
+        printf(" reading Falied, lseek to offset %u failed for block id %u\n", offset, blockid);
         return false;
     }
     if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
@@ -60,13 +60,13 @@ bool fs_read_block(sType blockid, char *buffer)
     return true;
 }
 
-bool fs_write_block(ssize_t blockid, char *buffer)
+bool fs_write_block(sType blockid, char *buffer)
 {
     if (!buffer)
         return false;
     if (isBlockOutOfRange(blockid))
     {
-         printf(" !!!!!!!!!! Block ID is greater then number allowed blocks: %ld !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
+         printf(" !!!!!!!!!! Block ID is greater then number allowed blocks: %u !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
         return false;
     }
 
@@ -74,7 +74,7 @@ bool fs_write_block(ssize_t blockid, char *buffer)
     off_t lseek_status = lseek(fs_ptr, offset, SEEK_SET);
     if(lseek_status == -1)
     {
-        printf(" writing Falied, lseek to offset %lu failed for block id %lu\n", offset, blockid);
+        printf(" writing Falied, lseek to offset %lu failed for block id %u\n", offset, blockid);
         return false;
     }
     if(write(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
