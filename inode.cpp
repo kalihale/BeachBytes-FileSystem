@@ -3,7 +3,7 @@
 #include "layerZero.h"
 
 bool inodeNum_valid(sType inodeNum){
-    return inodeNum < 0 || inodeNum > INODE_BLOCK_COUNT;
+    return inodeNum >= 0 && inodeNum < INODE_BLOCK_COUNT;
 }
 
 void gen_block_offset(sType inodeNum, sType *block, sType *offset){
@@ -67,9 +67,36 @@ bool writeINodeToDisk(sType inodeNum, inodeStruct* inode){
 
 }
 
+sType getNextFreeINode(){
+    sType curBlock = 0;
+    sType curOffset = 0;
+    char buffer[BLOCK_SIZE];
+    inodeStruct* blockNode;
+    inodeStruct* curNode;
+
+    while(curBlock< INODE_BLOCK_COUNT){
+        if(!fs_read_block(curBlock, buffer)){
+        //How to throw an error in fuse
+            return -1;
+        }
+        blockNode = (inodeStruct*) buffer;
+        while(curOffset < INODES_PER_BLOCK){
+            curNode = blockNode + curOffset;
+            if(!curNode->is_allocated){
+                return curBlock*INODES_PER_BLOCK + curOffset;
+            }
+            curOffset++;
+
+        }
+        curOffset = 0;
+        curBlock += 1;
+    }
+
+    return -1;
+}
+
 sType createInode(){
-    //TODO how to get next free iNode
-    sType inodeNum = 0; //TODO Update this to the next free iNode Num
+    sType inodeNum = getNextFreeINode();
 
     if(!inodeNum_valid(inodeNum)){
         return -1;
