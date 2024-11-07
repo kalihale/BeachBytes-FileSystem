@@ -150,3 +150,36 @@ bool fs_init()
 
     return true;
 }
+
+bool free_data_block(sType index){
+    if(index <= INODE_BLOCK_COUNT || index > BLOCK_COUNT){
+        return false;
+    }
+
+    if(fs_superblock->freelist_head == 0){
+        fs_superblock->freelist_head = index;
+        if(!fs_write_superblock()){
+            return false;
+        }
+        return true;
+    }
+
+    char buffer[BLOCK_SIZE];
+    memset(buffer, 0, BLOCK_SIZE);
+
+    //Write the value of the current free list head to the data block passed in 
+    sType value = fs_superblock->freelist_head;
+    memcpy(buffer, &value, sizeof(sType));
+    if(!fs_write_block(index, buffer)){
+        return false;
+    }
+
+    //update the value of the freelist_head and persist it
+    fs_superblock->freelist_head = index;
+    if(!fs_write_superblock()){
+        return false;
+    }
+
+    return true;
+
+}

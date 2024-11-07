@@ -128,6 +128,26 @@ sType createInode(){
 
 }
 
+
+bool free_block(inodeStruct* iNode){
+    for(sType i = 0; i< NUM_DIRECT_BLOCKS; i++){
+        sType block = iNode->directAddresses[i];
+        if(block != 0){
+            if(!free_data_block(block)){
+                return false;
+            }
+        }
+        else{
+            //if the direct block is empty, then the indirect ones will also be empty
+            //Can we assume this?
+            break;
+        }
+    }
+
+    return true;
+    //TODO free indirect blocks
+}
+
 bool delete_inode(sType inodeNum){
     if(!inodeNum_valid(inodeNum)){
         return false;

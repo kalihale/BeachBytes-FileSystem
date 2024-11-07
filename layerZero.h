@@ -20,4 +20,5 @@ bool fs_init();
 bool fs_create_ilist();
 bool fs_create_superblock();
 bool fs_write_superblock();
+bool free_data_block(sType index);
 #endif 
