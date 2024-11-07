@@ -17,7 +17,8 @@
 #define BLOCK_SIZE 4096
 #define FS_SIZE 128
 #define BLOCK_COUNT (FS_SIZE/BLOCK_SIZE)
-#define ADDRESS_SIZE 8
+#define ADDRESS_SIZE 4 // if we are using an unsigned int, the address size is 4 bytes
+
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
 #define INODES_PER_BLOCK 4 //TODO Should change later
 

@@ -131,9 +131,9 @@ sType createInode(){
 
 bool free_block(inodeStruct* iNode){
     for(sType i = 0; i< NUM_DIRECT_BLOCKS; i++){
-        sType block = iNode->directAddresses[i];
-        if(block != 0){
-            if(!free_data_block(block)){
+        sType blockid = iNode->directAddresses[i];
+        if(blockid != 0){
+            if(!free_data_block(blockid)){
                 return false;
             }
         }
@@ -144,6 +144,24 @@ bool free_block(inodeStruct* iNode){
         }
     }
 
+    // free single indirect blocks
+    if(iNode->singleIndirect != 0){
+        char buffer[BLOCK_SIZE];
+        if(!fs_read_block(iNode->singleIndirect, buffer)){
+            return false;
+        }
+        sType* blocks = (sType*)buffer;
+        for(sType i = 0; i< BLOCK_SIZE/ADDRESS_SIZE; i++){
+            sType blockid = blocks[i];
+            if(blockid == 0){
+                break;
+            }
+            if(!free_data_block(blockid)){
+                return false;
+            }
+        }
+    }
+    
     return true;
     //TODO free indirect blocks
 }
