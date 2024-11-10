@@ -4,9 +4,6 @@
 #include "layerZero.h"
 #include "fileStructure.h"
 
-
-
-
 bool fs_open()
 {
     fs_ptr = open(PERSISTANT_DISK, O_RDWR);
