@@ -4,9 +4,6 @@
 #include "layerZero.h"
 #include "fileStructure.h"
 
-
-
-
 bool fs_open()
 {
     fs_ptr = open(PERSISTANT_DISK, O_RDWR);
@@ -49,12 +46,12 @@ bool fs_read_block(sType blockid, char *buffer)
     sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
     if(lseek_status == -1)
     {
-        printf(" reading Falied, lseek to offset %u failed for block id %u\n", offset, blockid);
+        printf("Reading failed, lseek to offset %u failed for block id %u\n", offset, blockid);
         return false;
     }
     if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
     {
-        printf(" reading Falied, Reading contents of disk failed\n");
+        printf("Reading failed, reading contents of disk failed\n");
         return false;
     }
     return true;
