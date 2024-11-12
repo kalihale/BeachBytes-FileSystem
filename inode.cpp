@@ -128,6 +128,39 @@ sType createInode(){
 
 }
 
+//recurse = 1 single indirect
+//recurse = 2 double indirect
+//recurse = 3 triple indirect
+bool free_indirect_block(sType blockNum, sType recurse){
+    char buffer[BLOCK_SIZE];
+    if(!fs_read_block(blockNum, buffer)){
+        return false;
+    }
+    sType* blocks = (sType*)buffer;
+    for(sType i = 0; i< BLOCK_SIZE/ADDRESS_SIZE; i++){
+        sType blockid = blocks[i];
+        if(blockid == 0){
+                break;
+        }
+        if(recurse == 1){
+            //these block numbers correspond to direct blocks
+            if(!free_data_block(blockid)){
+                return false;
+            }
+        }
+        else{
+            //we are freeing a double or triple indirect block, so we need to recurse again.
+            if(!free_indirect_block(blockid, recurse-1)){
+                return false;
+            }
+        }
+        
+    }
+
+    return true;
+
+}
+
 
 bool free_block(inodeStruct* iNode){
     for(sType i = 0; i< NUM_DIRECT_BLOCKS; i++){
@@ -146,24 +179,24 @@ bool free_block(inodeStruct* iNode){
 
     // free single indirect blocks
     if(iNode->singleIndirect != 0){
-        char buffer[BLOCK_SIZE];
-        if(!fs_read_block(iNode->singleIndirect, buffer)){
+        if(!free_indirect_block(iNode->singleIndirect, 1)){
             return false;
         }
-        sType* blocks = (sType*)buffer;
-        for(sType i = 0; i< BLOCK_SIZE/ADDRESS_SIZE; i++){
-            sType blockid = blocks[i];
-            if(blockid == 0){
-                break;
-            }
-            if(!free_data_block(blockid)){
-                return false;
-            }
+    }
+
+    if(iNode->doubleIndirect != 0){
+        if(!free_indirect_block(iNode->doubleIndirect, 2)){
+            return false;
+        }
+    }
+
+    if(iNode->tripleIndirect != 0){
+        if(!free_indirect_block(iNode->tripleIndirect, 3)){
+            return false;
         }
     }
     
     return true;
-    //TODO free indirect blocks
 }
 
 bool delete_inode(sType inodeNum){
@@ -184,7 +217,9 @@ bool delete_inode(sType inodeNum){
     inodeStruct* node= (inodeStruct*)buffer;
     node = node + offset;
 
-    //TODO we have to add every allocated block back to the free list. 
+    if(!free_block(node)){
+        return false;
+    }
 
     node->deviceID = 0;
     node->fileSerialNum = 0;
