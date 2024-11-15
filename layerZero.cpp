@@ -2,25 +2,43 @@
 #include <unistd.h>
 
 #include "layerZero.h"
-#include "fileStructure.h"
+
 
 bool fs_open()
 {
-    fs_ptr = open(PERSISTANT_DISK, O_RDWR);
-    if (fs_ptr == -1)
-    {
-        printf(" Error opening device %s\n", PERSISTANT_DISK);
-        return false;
+    if(inMemory){
+        fs_memory_ptr = (char*)malloc(FS_SIZE);
+        memset(fs_memory_ptr, 0, FS_SIZE);
+        printf("IN MEMORY");
+    }
+    else{
+        fs_ptr = open(PERSISTANT_DISK, O_RDWR);
+        if (fs_ptr == -1)
+        {
+            printf(" Error opening device %s\n", PERSISTANT_DISK);
+            return false;
+        }
     }
     return true;
 }
 
 bool fs_close()
 {
-    if (close(fs_ptr) != 0)
-    {
-        printf("error while closeing the file\n");
-        return false;
+    if(inMemory){
+        if(fs_memory_ptr != nullptr){
+            free(fs_memory_ptr);
+        }
+        else{
+            printf("Attempting to free memory before it was allocated\n");
+            return false;
+        }
+    }
+    else{
+        if (close(fs_ptr) != 0)
+            {
+                printf("error while closeing the file\n");
+                return false;
+            }
     }
     
     return true;
@@ -42,18 +60,25 @@ bool fs_read_block(sType blockid, char *buffer)
         return false;
     }
 
-    sType offset = (unsigned long) BLOCK_SIZE * blockid;
-    sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
-    if(lseek_status == -1)
-    {
-        printf("Reading failed, lseek to offset %u failed for block id %u\n", offset, blockid);
-        return false;
+    if(inMemory){
+        sType offset = (sType) BLOCK_SIZE * blockid;
+        memcpy(buffer, fs_memory_ptr+offset, BLOCK_SIZE);
     }
-    if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
-    {
-        printf("Reading failed, reading contents of disk failed\n");
-        return false;
+    else{
+        sType offset = (unsigned long) BLOCK_SIZE * blockid;
+        sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
+        if(lseek_status == -1)
+        {
+            printf("Reading failed, lseek to offset %u failed for block id %u\n", offset, blockid);
+            return false;
+        }
+        if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
+        {
+            printf("Reading failed, reading contents of disk failed\n");
+            return false;
+        }
     }
+    
     return true;
 }
 
@@ -67,18 +92,25 @@ bool fs_write_block(sType blockid, char *buffer)
         return false;
     }
 
-    off_t offset = (unsigned long) BLOCK_SIZE * blockid;
-    off_t lseek_status = lseek(fs_ptr, offset, SEEK_SET);
-    if(lseek_status == -1)
-    {
-        printf(" writing Falied, lseek to offset %lu failed for block id %u\n", offset, blockid);
-        return false;
+    if(inMemory){
+        sType offset = (sType) BLOCK_SIZE * blockid;
+        memcpy(fs_memory_ptr+offset, buffer,  BLOCK_SIZE);
     }
-    if(write(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
-    {
-        printf(" writing Falied, : Writing contents to disk failed\n");
-        return false;
+    else{
+        off_t offset = (unsigned long) BLOCK_SIZE * blockid;
+        off_t lseek_status = lseek(fs_ptr, offset, SEEK_SET);
+        if(lseek_status == -1)
+        {
+            printf(" writing Falied, lseek to offset %lu failed for block id %u\n", offset, blockid);
+            return false;
+        }
+        if(write(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
+        {
+            printf(" writing Falied, : Writing contents to disk failed\n");
+            return false;
+        }
     }
+    
 
     return true;
 }
@@ -129,6 +161,8 @@ bool fs_create_ilist(){
 }
 bool fs_init()
 {
+    printf("INITIALIZING");
+    fs_open();
     bool createSuperBlock = fs_create_superblock();
     if (!createSuperBlock)
     {

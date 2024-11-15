@@ -1,8 +1,8 @@
-#include "fileStructure.h"
-#include "common_config.h"
-#include "layerZero.h"
+#include "inode.h"
 
 bool inodeNum_valid(sType inodeNum){
+    printf("inodeNum %d\n", inodeNum);
+    printf("Inode Block Count%d\n", INODE_BLOCK_COUNT);
     return inodeNum >= 0 && inodeNum < INODE_BLOCK_COUNT;
 }
 
@@ -173,7 +173,7 @@ bool free_block(inodeStruct* iNode){
         else{
             //if the direct block is empty, then the indirect ones will also be empty
             //Can we assume this?
-            break;
+            return true;
         }
     }
 

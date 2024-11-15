@@ -5,21 +5,20 @@ project(cs270)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_BUILD_TYPE Debug)
+
 
 
 set(header
     fuse_interface.h
     layerZero.h
     common_config.h
-    fileStructure.h
     inode.h
 )
 set(src
     inode.cpp
     layerZero.cpp
     fuse_interface.c
-        hello_test.cc
-        hello_test.cc
 )
 
 # Find fuse3 with pkg-config
@@ -53,6 +52,9 @@ enable_testing()
 add_executable(
         hello_test
         hello_test.cc
+        inode_tests.cc
+        inode.cpp
+        layerZero.cpp
 )
 target_link_libraries(
         hello_test
@@ -61,5 +63,7 @@ target_link_libraries(
 
 include(GoogleTest)
 gtest_discover_tests(hello_test)
+set_target_properties(hello_test PROPERTIES COMPILE_OPTIONS "-g")
+
 
 
