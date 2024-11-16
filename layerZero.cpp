@@ -9,7 +9,6 @@ bool fs_open()
     if(inMemory){
         fs_memory_ptr = (char*)malloc(FS_SIZE);
         memset(fs_memory_ptr, 0, FS_SIZE);
-        printf("IN MEMORY");
     }
     else{
         fs_ptr = open(PERSISTANT_DISK, O_RDWR);
@@ -161,7 +160,6 @@ bool fs_create_ilist(){
 }
 bool fs_init()
 {
-    printf("INITIALIZING");
     fs_open();
     bool createSuperBlock = fs_create_superblock();
     if (!createSuperBlock)

@@ -22,7 +22,7 @@
 #define ADDRESS_SIZE 4 // if we are using an unsigned int, the address size is 4 bytes
 
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
-#define INODES_PER_BLOCK BLOCK_SIZE/sizeof(inodeStruct) //TODO Should change later
+#define INODES_PER_BLOCK ((sType)(BLOCK_SIZE/sizeof(inodeStruct))) //TODO Should change later
 
 #define INODE_BLOCK_COUNT ((sType)(BLOCK_COUNT * 0.015)) // 1.5% blocks reserved for inodes TODO: Check if it is okay
 #define NUM_OF_DATA_BLOCKS ((unsigned int)(BLOCK_COUNT - INODE_BLOCK_COUNT - 1))

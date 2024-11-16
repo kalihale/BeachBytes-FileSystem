@@ -1,8 +1,6 @@
 #include "inode.h"
 
 bool inodeNum_valid(sType inodeNum){
-    printf("inodeNum %d\n", inodeNum);
-    printf("Inode Block Count%d\n", INODE_BLOCK_COUNT);
     return inodeNum >= 0 && inodeNum < INODE_BLOCK_COUNT;
 }
 
@@ -68,7 +66,7 @@ bool writeINodeToDisk(sType inodeNum, inodeStruct* inode){
 }
 
 sType getNextFreeINode(){
-    sType curBlock = 0;
+    sType curBlock = 1;
     sType curOffset = 0;
     char buffer[BLOCK_SIZE];
     inodeStruct* blockNode;
@@ -83,7 +81,7 @@ sType getNextFreeINode(){
         while(curOffset < INODES_PER_BLOCK){
             curNode = blockNode + curOffset;
             if(!curNode->is_allocated){
-                return curBlock*INODES_PER_BLOCK + curOffset;
+                return (curBlock-1)*INODES_PER_BLOCK + curOffset;
             }
             curOffset++;
 
@@ -113,9 +111,7 @@ sType createInode(){
         return -1;
     }
 
-    inodeStruct* node = (inodeStruct*) buffer;
-    node = node + offset;
-
+    inodeStruct* node = (inodeStruct*)(buffer + offset * sizeof(inodeStruct));
     node -> linkCount = 0;
     node -> is_allocated = true;
 
