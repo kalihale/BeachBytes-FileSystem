@@ -13,13 +13,21 @@ set(header
     common_config.h
     fileStructure.h
     inode.h
+    data_block_operation.h
+    linkFuseAndFS.h
 )
 set(src
     inode.cpp
     layerZero.cpp
-    fuse_interface.c
+    fuse_interface.cpp
+    data_block_operation.cpp
+    linkFuseAndFS.cpp
  )
 
+ set(src2
+ setupDiskMain.cpp
+ layerZero.cpp
+ )
 # Find fuse3 with pkg-config
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE3 REQUIRED fuse3)
@@ -31,6 +39,7 @@ add_definitions(${FUSE3_CFLAGS_OTHER})
 
 # Add executable and link FUSE3 libraries
 add_executable(cs270 ${src} ${header})
+add_executable(setUpDisk ${src2} ${header})
 
 
 target_link_libraries(cs270 ${FUSE3_LIBRARIES})

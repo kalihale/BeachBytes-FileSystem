@@ -14,17 +14,19 @@
 
 #define PERSISTANT_DISK "testPersistant.txt"
 
-#define BLOCK_SIZE 4096
-#define FS_SIZE 128
-#define BLOCK_COUNT (FS_SIZE/BLOCK_SIZE)
-#define ADDRESS_SIZE 8
-#define NUM_DIRECT_BLOCKS  ((uint32_t)10)
-#define INODES_PER_BLOCK 4 //TODO Should change later
-
-#define INODE_BLOCK_COUNT (BLOCK_COUNT * 0.015) // 1.5% blocks reserved for inodes TODO: Check if it is okay
-#define NUM_OF_DATA_BLOCKS ((unsigned int)(BLOCK_COUNT - INODE_BLOCK_COUNT - 1))
-
 typedef uint32_t sType;
 
+#define BLOCK_SIZE 32
+#define FS_SIZE ((uint64_t) 104857600*5)//1024
+#define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
+#define ADDRESS_SIZE 8
+#define NUM_DIRECT_BLOCKS  ((uint32_t)10)
+#define DEFAULT_PERMISSIONS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+
+//directory info
+#define FILE_NAME_MAX_LENGTH ((sType) 25)
+#define RECORD_LENGTH ((unsigned short) 2) // size to stores the info of length
+#define RECORD_INUM ((sType) 8)   // size to store the inode
+#define RECORD_FIXED_LEN ((unsigned short)(RECORD_LENGTH + RECORD_INUM))
 
 #endif

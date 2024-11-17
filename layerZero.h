@@ -6,7 +6,6 @@
 
 static int64_t fs_ptr;
 
-static struct superblock* fs_superblock = NULL;
 
 bool fs_open();
 
@@ -20,5 +19,6 @@ bool fs_init();
 bool fs_create_ilist();
 bool fs_create_superblock();
 bool fs_write_superblock();
-bool free_data_block(sType index);
+bool load_FS();
+void restartDisk();
 #endif 
