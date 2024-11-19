@@ -18,7 +18,7 @@
 
 #define BLOCK_SIZE 4096
 #define FS_SIZE 409600000
-#define BLOCK_COUNT (FS_SIZE/BLOCK_SIZE)
+#define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
 #define ADDRESS_SIZE 4 // if we are using an unsigned int, the address size is 4 bytes
 
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
@@ -26,6 +26,13 @@
 
 #define INODE_BLOCK_COUNT ((sType)(BLOCK_COUNT * 0.015)) // 1.5% blocks reserved for inodes TODO: Check if it is okay
 #define NUM_OF_DATA_BLOCKS ((unsigned int)(BLOCK_COUNT - INODE_BLOCK_COUNT - 1))
+#define DEFAULT_PERMISSIONS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
+
+//directory info
+#define FILE_NAME_MAX_LENGTH ((sType) 25)
+#define RECORD_LENGTH ((unsigned short) 2) // size to stores the info of length
+#define RECORD_INUM ((sType) 8)   // size to store the inode
+#define RECORD_FIXED_LEN ((unsigned short)(RECORD_LENGTH + RECORD_INUM))
 
 typedef uint32_t sType;
 
