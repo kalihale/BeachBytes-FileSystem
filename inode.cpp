@@ -29,6 +29,11 @@ inodeStruct* load_iNode_From_Disk(sType inodeNum){
     inodeStruct* node= (inodeStruct*)buffer;
     node = node + offset;
 
+    if(!node->is_allocated){
+        printf("Inode is not Allocated");
+        return NULL;
+    }
+
     inodeStruct* iNode = (inodeStruct*)malloc(sizeof(inodeStruct));
     memcpy(iNode, node, sizeof(inodeStruct));
     node = NULL;

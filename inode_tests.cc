@@ -125,5 +125,40 @@ TEST_F(inodeTests, CreatingInodesAcrossBlocks){
     free(inode);    
 }
 
+TEST_F(inodeTests, DeleteInodeInMiddle){
+    sType inodeNum0 = createInode();
+    sType inodeNum1 = createInode();
+    sType inodeNum2 = createInode();
+    sType inodeNum3 = createInode();
+    sType inodeNum4 = createInode();
+
+     EXPECT_TRUE(delete_inode(inodeNum2)); 
+     ASSERT_EQ(nullptr, load_iNode_From_Disk(inodeNum2));
+
+    inodeNum2 = createInode();
+    ASSERT_EQ(inodeNum2, 2);
+
+    EXPECT_TRUE(delete_inode(inodeNum3)); 
+    ASSERT_EQ(nullptr, load_iNode_From_Disk(inodeNum3));
+    inodeNum3 = createInode();
+    ASSERT_EQ(inodeNum3, 3);
+
+}
+
+TEST_F(inodeTests, FreeIndirectBlocks){
+    sType inodeNum = createInode();
+    inodeStruct* iNode = load_iNode_From_Disk(inodeNum);
+
+    for(int i = 0; i < 10; i++ ){
+        inode->directAddresses[i] = i+2000;
+    }
+
+    for(int i = 0; i < 1024; i++){
+        
+    }
+
+
+}
+
 
 } //Namespace
