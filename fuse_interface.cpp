@@ -65,7 +65,7 @@ static int fioc_getattr(const char *path, struct stat *stbuf,
 	// stbuf->st_gid = getgid();
 	// stbuf->st_atime = stbuf->st_mtime = time(NULL);
 	// stbuf->st_ctime = time(NULL);
-    static int h= fs_getattr(path, &stbuf);
+     int h= fs_getattr(path, &stbuf);
     printf("done with fs_get %d : returned\n\n",h);
     return h;
 }
@@ -179,7 +179,7 @@ static int fioc_read(const char *path, char *buf, size_t size,
 
 
 
-static int fioc_write(const char *buf, const char *path, size_t size, off_t offset, struct fuse_file_info *fi)
+static int fioc_write(const char *path,const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	printf("sdfasd\n\n");
 	//  if (fioc_expand(offset + size))
@@ -465,7 +465,7 @@ static const struct fuse_operations fioc_oper = {
 	//.lock = fioc_lock,
 	.utimens = fioc_utimens,
 	//.bmap = fioc_bmap,
-	.ioctl		= fioc_ioctl,
+	//.ioctl		= fioc_ioctl,
 	// .poll = fioc_poll,
 	// .write_buf = fioc_write_buf,
 	// .read_buf = fioc_read_buf,

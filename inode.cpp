@@ -35,6 +35,10 @@ inodeStruct* loadINodeFromDisk(sType inodeNum){
 
     inodeStruct* iNode = (inodeStruct*)malloc(sizeof(inodeStruct));
     memcpy(iNode, node, sizeof(inodeStruct));
+    if(!iNode->is_allocated){
+        free(iNode);
+        return NULL;
+    }
     node = NULL;
     return iNode;
 
@@ -85,7 +89,7 @@ sType getNextFreeINode(){
         while(curOffset < INODES_PER_BLOCK){
             curNode = blockNode + curOffset;
             if(!curNode->is_allocated){
-                return curBlock*INODES_PER_BLOCK + curOffset;
+                return (curBlock-1)*INODES_PER_BLOCK + curOffset;
             }
             curOffset++;
 
@@ -262,7 +266,7 @@ bool add_datablock_to_inode(inodeStruct *inodeObj, const sType data_block_num)
                 return false;
             }
             inodeObj->doubleIndirect = dInd_block_num;
-            // fuse_log(FUSE_LOG_DEBUG, "%s : Successfully allocated new data block for new double indirect block with file block num %zd\n", ADD_DATABLOCK_TO_INODE, reference_blockId);
+            
         }
 
         sType double_blockId = reference_blockId / NUM_OF_ADDRESSES_PER_BLOCK;
@@ -505,7 +509,7 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
     {
         return false;
     }
-
+    printf("inside add dir\n\n");
     sType fileNameLen = strlen(file_name);
     if(fileNameLen > FILE_NAME_MAX_LENGTH)
     {
@@ -562,9 +566,9 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
 
     unsigned short record_length = RECORD_FIXED_LEN + (unsigned short)fileNameLen;
     ((uint64_t*) data_block)[0]=record_length;
-    uint64_t addPadSize = sizeof(uint64_t); 
+    int addPadSize = sizeof(uint64_t); 
 
-    ((unsigned short*)data_block + addPadSize)[0] = record_length;
+    ((unsigned short*)(data_block + addPadSize))[0] = record_length;
    
     ((sType*)(data_block + addPadSize + RECORD_LENGTH))[0] = child_inum;
   
@@ -1072,6 +1076,7 @@ sType get_inode_of_File(const char* const file_path)
     }
 
     inodeStruct* inodeObj = loadINodeFromDisk(parent_inum);
+    if(!inodeObj){return -1;}
     char child_path[file_path_len + 1];
     if(!copy_file_name(child_path, file_path, file_path_len)){
         free(inodeObj);
@@ -1104,7 +1109,7 @@ sType get_inode_of_File(const char* const file_path)
         }
 
         p_block = read_data_block(p_plock_num);
-        if((uint64_t*)p_block==0){
+        if(((uint64_t*)p_block)[0]==0){
             free(p_block);
             continue;
         }
@@ -1134,7 +1139,7 @@ sType get_inode_of_File(const char* const file_path)
         free(p_block);
     }
     if(offset==-1){
-        return false;
+        return -1;
     }
 
     free(inodeObj);

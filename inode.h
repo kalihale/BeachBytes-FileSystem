@@ -7,7 +7,7 @@
 //#include <cstdint>
 #include "common_config.h"
 #include "data_block_operation.h"
-
+#include "fileStructure.h"
 
 inodeStruct* loadINodeFromDisk(sType inodeNum);
 

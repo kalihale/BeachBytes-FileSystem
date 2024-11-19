@@ -4,7 +4,7 @@
 #include "layerZero.h"
 #include "fileStructure.h"
 
-
+struct superblock* fs_superblock = NULL;
 
 
 bool fs_open()

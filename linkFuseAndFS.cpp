@@ -13,22 +13,30 @@
 using namespace std;
 
 //#include <string>
+sType ROOT_DIR_INODE_NUM=0;
 
 bool bootUpFileSytem()
 {
     printf("starting loadFs\n");
    load_FS();
-    printf("done with loadFs\n");
+    printf("done with loadFs %lu\n",ROOT_DIR_INODE_NUM);
    //TODO check if this is ever return null??
    // Check for root directory
     inodeStruct* root_dir = loadINodeFromDisk(ROOT_DIR_INODE_NUM);
     
-    printf("got root dir\n");
-    if(root_dir->is_allocated)
+    //printf("got root dir %d %d\n",root_dir->is_allocated,root_dir->filesCount);
+    if(root_dir && root_dir->is_allocated && root_dir->filesCount >= 2)
     {
         return true;
     }
 
+    ROOT_DIR_INODE_NUM=createInode();
+    root_dir = loadINodeFromDisk(ROOT_DIR_INODE_NUM);
+    if(!root_dir){
+        printf("cannot get root inode\n\n");
+        return false;
+    }
+    printf("%d rootInode\n\n",ROOT_DIR_INODE_NUM);
     //not found
     time_t curr_time = time(NULL);
 
@@ -46,13 +54,13 @@ bool bootUpFileSytem()
     if(!add_directory_entry(&root_dir, ROOT_DIR_INODE_NUM,(char*) dir_name.data())){
         return false;
     }
-
+    printf("%lu %lu :blocks number\n",root_dir->fileSize,root_dir->blocks);
     dir_name = "..";
     if(!add_directory_entry(&root_dir, ROOT_DIR_INODE_NUM,(char*) dir_name.data())){
         return false;
     }
 
-
+    printf("%lu %lu :blocks number\n",root_dir->fileSize,root_dir->blocks);
     if(!writeINodeToDisk(ROOT_DIR_INODE_NUM, root_dir)){
         return false;
     }
@@ -78,7 +86,6 @@ struct stat {
 }
 */
 static void inode_to_stat(inodeStruct** node, struct stat** st){
-    // fuse_log(FUSE_LOG_DEBUG, "Filling st with inode info...\n");
     (*st)->st_mode = (*node)->i_mode;
     (*st)->st_nlink = (*node)->linkCount;
     (*st)->st_uid = getgid(); 
@@ -90,8 +97,7 @@ static void inode_to_stat(inodeStruct** node, struct stat** st){
     (*st)->st_atime = (*node)->atime;
     (*st)->st_ctime = (*node)->ctime;
     (*st)->st_mtime = (*node)->mtime;
-    // fuse_log(FUSE_LOG_DEBUG, "Filling complete...\n");
-    //printf("%d")
+    printf("%d %d %lu %lu :stat\n",(*node)->i_mode,(*node)->linkCount,(*node)->fileSize,(*node)->blocks);
 }
 
 
@@ -159,9 +165,10 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
 
     inodeStruct* parent_inode = loadINodeFromDisk(parent_inode_num);
     // Check if parent is a directory
-    if(!S_ISDIR(parent_inode->i_mode))
+    if(!parent_inode || !S_ISDIR(parent_inode->i_mode))
     {
-        free(parent_inode);
+        if(parent_inode)
+            free(parent_inode);
         return -ENOENT;
     }
     // Check parent write permission
@@ -200,6 +207,9 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
     }
 
     *buff = loadINodeFromDisk(child_inode_num);
+    if(!*buff){
+        return -1;
+    }
     (*buff)->linkCount = 1;
     (*buff)->i_mode = mode;
     (*buff)->blocks = 0;
@@ -320,7 +330,7 @@ sType fs_unlink(const char* path)
     }
 
     inodeStruct* node = loadINodeFromDisk(inum);
-    
+    if(!node)return -EINVAL;
     if(S_ISDIR(node->i_mode) && !is_empty_dir(&node))
     {
         free(node);
@@ -333,7 +343,7 @@ sType fs_unlink(const char* path)
         return -1;
     }
     inodeStruct* parent = loadINodeFromDisk(parent_inum);
-
+    if(!parent)return -ENOTEMPTY;
     if(!remove_from_directory(&parent, child_name))
     {
         free(node);
@@ -352,6 +362,7 @@ sType fs_unlink(const char* path)
     writeINodeToDisk(parent_inum, parent);
     free(parent);
     free(node);
+    printf(" unlink : Deleted file %s\n", path);
     return 0;
 }
 
@@ -364,6 +375,7 @@ sType fs_truncate(const char* path, off_t length)
        return -ENOENT;
     }
     inodeStruct* node = loadINodeFromDisk(inum);
+    if(!node){return -EACCES; }
     if(!(bool)(node->i_mode & S_IWUSR))
     {
         return -EACCES;
@@ -451,7 +463,9 @@ sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset)
     }
 
     inodeStruct* node = loadINodeFromDisk(inum);
-
+    if(!node){
+        return -1;
+    }
     size_t bytes_written = 0;
 
     sType start_i_block = (sType)(offset / BLOCK_SIZE);
@@ -554,9 +568,10 @@ sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset)
         }
     }
 
-    sType bytes_to_add = (sType)((offset + bytes_written) - node->fileSize);
-    bytes_to_add = (bytes_to_add > 0) ? bytes_to_add : 0;
-    node->fileSize += bytes_to_add;
+    //sType bytes_to_add = (sType)((offset + bytes_written) - node->fileSize);
+    //bytes_to_add = (bytes_to_add > 0) ? bytes_to_add : 0;
+    //node->fileSize += bytes_to_add;
+    node->fileSize=(sType)((offset + bytes_written));
     if(bytes_written > 0)
     {
         time_t curr_time= time(NULL);
@@ -579,6 +594,7 @@ sType fs_readdir(const char* path, void* buff, fuse_fill_dir_t filler)
     }
 
     inodeStruct* node = loadINodeFromDisk(inum);
+    if(!node){return -ENOTDIR;}
     if(!S_ISDIR(node->i_mode))
     {
         return -ENOTDIR;
@@ -605,6 +621,7 @@ sType fs_readdir(const char* path, void* buff, fuse_fill_dir_t filler)
             memcpy(file_name, record + RECORD_FIXED_LEN, name_len);
 
             inodeStruct* file_inode = loadINodeFromDisk(file_inum);
+            if(!file_inode){return -ENOTDIR; }
             struct stat stbuff_data;
             memset(&stbuff_data, 0, sizeof(struct stat));
             struct stat *stbuff = &stbuff_data;
@@ -649,6 +666,7 @@ sType fs_openFile(const char* path, sType oflag)
 
     // Permissions check
     inodeStruct* node = loadINodeFromDisk(inum);
+    if(!node){return -EACCES;}
     if((oflag & O_RDONLY) || (oflag & O_RDWR)) // Needs read permission
     {
         if(!(bool)(node->i_mode & S_IRUSR))
@@ -704,7 +722,7 @@ sType fs_read(const char* path, char* buff, size_t nbytes, off_t offset)
     }
 
     inodeStruct* node= loadINodeFromDisk(inum);
-   
+   if(!node){return -ENOENT;}
     if (node->fileSize == 0)
     {
         return 0;
@@ -725,8 +743,7 @@ sType fs_read(const char* path, char* buff, size_t nbytes, off_t offset)
     sType end_block_offset = ((offset + nbytes - 1) % BLOCK_SIZE); // Ending offet in last block till where to read
 
     sType blocks_to_read = end_i_block - start_i_block + 1; // Number of blocks that need to be read
-    // fuse_log(FUSE_LOG_DEBUG, "%s : Number of blocks to read: %ld.\n", READ, blocks_to_read);
-
+    
     size_t bytes_read = 0;
     sType dblock_num;
     char* buf_read = NULL;
@@ -845,6 +862,7 @@ sType fs_rename(const char *from, const char *to)
         return -1;
     }
     inodeStruct* to_parent_inode = loadINodeFromDisk(to_parent_inode_num);
+    if(!to_parent_inode){return -1;}
     if(!S_ISDIR(to_parent_inode->i_mode))
     {
         free(to_parent_inode);
@@ -886,7 +904,7 @@ sType fs_rename(const char *from, const char *to)
         return -1;
     }
     inodeStruct* from_parent_inode = loadINodeFromDisk(from_parent_inode_num);
-
+    if(!from_parent_inode){return -1;}
     char from_child_name[from_path_len + 1];
     if(!copy_file_name(from_child_name, from, from_path_len))
     {

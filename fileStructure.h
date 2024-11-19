@@ -56,12 +56,12 @@ typedef struct inodeStruct {
 
 }inodeStruct;
 
-static struct superblock* fs_superblock = NULL;
-
+extern struct superblock* fs_superblock;// = NULL;
+extern sType ROOT_DIR_INODE_NUM;
 #define INODE_BLOCK_COUNT ((sType)BLOCK_COUNT * 0.015) // 1.5% blocks reserved for inodes TODO: Check if it is okay
 #define INODES_PER_BLOCK ((sType)(INODE_BLOCK_COUNT/sizeof(struct inodeStruct))) //TODO Should change later
 #define NUM_OF_DATA_BLOCKS ((sType)((BLOCK_COUNT - INODE_BLOCK_COUNT - 1)))
-#define ROOT_DIR_INODE_NUM 0
+//#define ROOT_DIR_INODE_NUM 0
 
 #define NUM_OF_ADDRESSES_PER_BLOCK ((sType) (BLOCK_SIZE / sizeof(sType)))  
 #define NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR ((sType) (BLOCK_SIZE / sizeof(sType))) // 4096/8 = 512
