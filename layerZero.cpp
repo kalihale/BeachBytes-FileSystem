@@ -2,28 +2,42 @@
 #include <unistd.h>
 
 #include "layerZero.h"
-#include "fileStructure.h"
-
-
 
 
 bool fs_open()
 {
-    fs_ptr = open(PERSISTANT_DISK, O_RDWR);
-    if (fs_ptr == -1)
-    {
-        printf(" Error opening device %s\n", PERSISTANT_DISK);
-        return false;
+    if(inMemory){
+        fs_memory_ptr = (char*)malloc(FS_SIZE);
+        memset(fs_memory_ptr, 0, FS_SIZE);
+    }
+    else{
+        fs_ptr = open(PERSISTANT_DISK, O_RDWR);
+        if (fs_ptr == -1)
+        {
+            printf(" Error opening device %s\n", PERSISTANT_DISK);
+            return false;
+        }
     }
     return true;
 }
 
 bool fs_close()
 {
-    if (close(fs_ptr) != 0)
-    {
-        printf("error while closeing the file\n");
-        return false;
+    if(inMemory){
+        if(fs_memory_ptr != nullptr){
+            free(fs_memory_ptr);
+        }
+        else{
+            printf("Attempting to free memory before it was allocated\n");
+            return false;
+        }
+    }
+    else{
+        if (close(fs_ptr) != 0)
+            {
+                printf("error while closeing the file\n");
+                return false;
+            }
     }
     
     return true;
@@ -41,47 +55,61 @@ bool fs_read_block(sType blockid, char *buffer)
 
     if (isBlockOutOfRange(blockid))
     {
-        printf(" !!!!!!!!!! Block id out of range: %ld !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
+        printf(" !!!!!!!!!! Block id out of range: %u !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
         return false;
     }
 
-    sType offset = (unsigned long) BLOCK_SIZE * blockid;
-    sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
-    if(lseek_status == -1)
-    {
-        printf(" reading Falied, lseek to offset %lu failed for block id %lu\n", offset, blockid);
-        return false;
+    if(inMemory){
+        sType offset = (sType) BLOCK_SIZE * blockid;
+        memcpy(buffer, fs_memory_ptr+offset, BLOCK_SIZE);
     }
-    if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
-    {
-        printf(" reading Falied, Reading contents of disk failed\n");
-        return false;
+    else{
+        sType offset = (unsigned long) BLOCK_SIZE * blockid;
+        sType lseek_status = lseek(fs_ptr, offset, SEEK_SET);
+        if(lseek_status == -1)
+        {
+            printf("Reading failed, lseek to offset %u failed for block id %u\n", offset, blockid);
+            return false;
+        }
+        if(read(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
+        {
+            printf("Reading failed, reading contents of disk failed\n");
+            return false;
+        }
     }
+    
     return true;
 }
 
-bool fs_write_block(ssize_t blockid, char *buffer)
+bool fs_write_block(sType blockid, char *buffer)
 {
     if (!buffer)
         return false;
     if (isBlockOutOfRange(blockid))
     {
-         printf(" !!!!!!!!!! Block ID is greater then number allowed blocks: %ld !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
+         printf(" !!!!!!!!!! Block ID is greater then number allowed blocks: %u !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n", blockid);
         return false;
     }
 
-    off_t offset = (unsigned long) BLOCK_SIZE * blockid;
-    off_t lseek_status = lseek(fs_ptr, offset, SEEK_SET);
-    if(lseek_status == -1)
-    {
-        printf(" writing Falied, lseek to offset %lu failed for block id %lu\n", offset, blockid);
-        return false;
+    if(inMemory){
+        sType offset = (sType) BLOCK_SIZE * blockid;
+        memcpy(fs_memory_ptr+offset, buffer,  BLOCK_SIZE);
     }
-    if(write(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
-    {
-        printf(" writing Falied, : Writing contents to disk failed\n");
-        return false;
+    else{
+        off_t offset = (unsigned long) BLOCK_SIZE * blockid;
+        off_t lseek_status = lseek(fs_ptr, offset, SEEK_SET);
+        if(lseek_status == -1)
+        {
+            printf(" writing Falied, lseek to offset %lu failed for block id %u\n", offset, blockid);
+            return false;
+        }
+        if(write(fs_ptr, buffer, BLOCK_SIZE) != BLOCK_SIZE)
+        {
+            printf(" writing Falied, : Writing contents to disk failed\n");
+            return false;
+        }
     }
+    
 
     return true;
 }
@@ -132,6 +160,7 @@ bool fs_create_ilist(){
 }
 bool fs_init()
 {
+    fs_open();
     bool createSuperBlock = fs_create_superblock();
     if (!createSuperBlock)
     {
@@ -149,4 +178,37 @@ bool fs_init()
     printf("Successfully created inode blocks\n");
 
     return true;
+}
+
+bool free_data_block(sType index){
+    if(index <= INODE_BLOCK_COUNT || index > BLOCK_COUNT){
+        return false;
+    }
+
+    if(fs_superblock->freelist_head == 0){
+        fs_superblock->freelist_head = index;
+        if(!fs_write_superblock()){
+            return false;
+        }
+        return true;
+    }
+
+    char buffer[BLOCK_SIZE];
+    memset(buffer, 0, BLOCK_SIZE);
+
+    //Write the value of the current free list head to the data block passed in 
+    sType value = fs_superblock->freelist_head;
+    memcpy(buffer, &value, sizeof(sType));
+    if(!fs_write_block(index, buffer)){
+        return false;
+    }
+
+    //update the value of the freelist_head and persist it
+    fs_superblock->freelist_head = index;
+    if(!fs_write_superblock()){
+        return false;
+    }
+
+    return true;
+
 }
