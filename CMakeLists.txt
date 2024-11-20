@@ -20,7 +20,9 @@ set(header
 set(src
     inode.cpp
     layerZero.cpp
-    fuse_interface.c
+    fuse_interface.cpp
+    data_block_operation.cpp
+    linkFuseAndFS.cpp
  )
 
  set(src2
@@ -38,6 +40,18 @@ add_definitions(${FUSE3_CFLAGS_OTHER})
 
 # Add executable and link FUSE3 libraries
 add_executable(cs270 ${src} ${header})
+add_executable(setUpDisk ${src2} ${header})
+
+include_directories(/usr/include)
+
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+)
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
 
 
 target_link_libraries(cs270 ${FUSE3_LIBRARIES})
@@ -51,6 +65,9 @@ add_executable(
         inode_tests.cc
         inode.cpp
         layerZero.cpp
+        data_block_operation.cpp
+        common_config.h
+        linkFuseAndFS.cpp
 )
 target_link_libraries(
         hello_test

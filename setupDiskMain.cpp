@@ -7,7 +7,6 @@
 
 #include "layerZero.h"
 #include "common_config.h"
-#include "fileStructure.h"
 
 
 int main(int argc, char *argv[])

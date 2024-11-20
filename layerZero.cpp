@@ -2,7 +2,7 @@
 #include <unistd.h>
 
 #include "layerZero.h"
-#include "fileStructure.h"
+#include "common_config.h"
 
 struct superblock* fs_superblock = NULL;
 
@@ -145,36 +145,8 @@ bool fs_write_block(sType blockid, char *buffer)
     return true;
 }
 
-bool load_FS(){
-    if(!fs_open()){
-        return false;
-    };
-    if(fs_superblock == NULL)
-    {
-        fs_superblock = (struct superblock*)malloc(sizeof(struct superblock));
-    }
 
-    char sb_buffer[BLOCK_SIZE];
-    memset(sb_buffer, 0, BLOCK_SIZE);
-    fs_read_block(0, sb_buffer);
-    
-    struct superblock* sb = (struct superblock*)sb_buffer;
-
-
-    memcpy(fs_superblock, sb, sizeof(struct superblock));
-
-    //fs_read_block(0,(char*) fs_superblock);
-    if(fs_superblock->inodes_count == 0)
-    {
-        printf("failed to read superBlock\n\n");
-        //error while loading the superBlock
-        return false;
-    }
-    return true;
-}
 bool fs_create_superblock(){
-    //TODO
-
     fs_superblock = (struct superblock*)malloc(sizeof(struct superblock));
     fs_superblock->inodes_count = INODE_BLOCK_COUNT * (INODES_PER_BLOCK);
 
@@ -243,7 +215,9 @@ bool fs_init()
         return false;
     }
     printf("Successfully created inode blocks\n");
-    fs_close();
+    if(!inMemory){
+        fs_close();
+    }
     return true;
 }
 

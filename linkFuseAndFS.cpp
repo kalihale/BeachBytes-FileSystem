@@ -1,7 +1,4 @@
 #include "layerZero.h"
-#include "fileStructure.h"
-
-#include "fileStructure.h"
 #include "common_config.h"
 #include "data_block_operation.h"
 #include "inode.h"

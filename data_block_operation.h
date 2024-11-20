@@ -4,7 +4,6 @@
 #include <sys/types.h>
 
 #include "common_config.h"
-#include "fileStructure.h"
 
 sType allocate_data_block();
 char* read_data_block(sType index);

@@ -32,9 +32,9 @@ TEST_F(inodeTests, GenBlockOffset) {
 
 
 TEST_F(inodeTests, LoadINodeFromDisk) {
-    EXPECT_EQ(load_iNode_From_Disk(-1), nullptr);
+    EXPECT_EQ(loadINodeFromDisk(-1), nullptr);
     sType inodeNum = createInode();
-    inodeStruct* inode = load_iNode_From_Disk(inodeNum);
+    inodeStruct* inode = loadINodeFromDisk(inodeNum);
     ASSERT_NE(inode, nullptr);  
     free(inode); 
 } 
@@ -85,7 +85,7 @@ TEST_F(inodeTests, FindCorrectFreeINode) {
 
 TEST_F(inodeTests, TestDataPersistence){
     sType inodeNum = createInode();
-    inodeStruct* inode = load_iNode_From_Disk(inodeNum); 
+    inodeStruct* inode = loadINodeFromDisk(inodeNum); 
 
     inode->tripleIndirect = 5;
     inode->doubleIndirect = 10;
@@ -99,9 +99,9 @@ TEST_F(inodeTests, TestDataPersistence){
     writeINodeToDisk(inodeNum, inode);
 
     inodeNum = createInode();
-    inode = load_iNode_From_Disk(inodeNum); 
+    inode = loadINodeFromDisk(inodeNum); 
 
-    inode = load_iNode_From_Disk(0);
+    inode = loadINodeFromDisk(0);
 
     ASSERT_EQ(inode->tripleIndirect , 5) ;
     ASSERT_EQ(inode->doubleIndirect , 10) ;
@@ -120,7 +120,7 @@ TEST_F(inodeTests, CreatingInodesAcrossBlocks){
         inodeNum = createInode();
         ASSERT_EQ(inodeNum, i);
     }
-    inodeStruct* inode = load_iNode_From_Disk(inodeNum);
+    inodeStruct* inode = loadINodeFromDisk(inodeNum);
     ASSERT_NE(inode, nullptr);  
     free(inode);    
 }

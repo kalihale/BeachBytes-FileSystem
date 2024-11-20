@@ -5,10 +5,11 @@
 #ifndef INODE_H
 #define INODE_H
 //#include <cstdint>
-#include "common_config.h"
 #include "data_block_operation.h"
-#include "fileStructure.h"
-#include "layerZero.h"
+
+bool inodeNum_valid(sType inodeNum);
+
+void gen_block_offset(sType inodeNum, sType *block, sType *offset);
 
 inodeStruct* loadINodeFromDisk(sType inodeNum);
 
