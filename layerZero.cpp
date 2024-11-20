@@ -2,6 +2,9 @@
 #include <unistd.h>
 
 #include "layerZero.h"
+#include "fileStructure.h"
+
+struct superblock* fs_superblock = NULL;
 
 
 bool fs_open()
@@ -142,11 +145,37 @@ bool fs_write_block(sType blockid, char *buffer)
     return true;
 }
 
+bool load_FS(){
+    if(!fs_open()){
+        return false;
+    };
+    if(fs_superblock == NULL)
+    {
+        fs_superblock = (struct superblock*)malloc(sizeof(struct superblock));
+    }
+
+    char sb_buffer[BLOCK_SIZE];
+    memset(sb_buffer, 0, BLOCK_SIZE);
+    fs_read_block(0, sb_buffer);
+    
+    struct superblock* sb = (struct superblock*)sb_buffer;
+
+
+    memcpy(fs_superblock, sb, sizeof(struct superblock));
+
+    //fs_read_block(0,(char*) fs_superblock);
+    if(fs_superblock->inodes_count == 0)
+    {
+        printf("failed to read superBlock\n\n");
+        //error while loading the superBlock
+        return false;
+    }
+    return true;
+}
 bool fs_create_superblock(){
     //TODO
 
     fs_superblock = (struct superblock*)malloc(sizeof(struct superblock));
-    //TODO assign the values to superBlocks
     fs_superblock->inodes_count = INODE_BLOCK_COUNT * (INODES_PER_BLOCK);
 
     fs_superblock->iList_size = INODE_BLOCK_COUNT;
@@ -189,7 +218,6 @@ bool fs_create_ilist(){
     // start with index = 1 since superblock will take block 0
     for(ssize_t blocknum = 1; blocknum <= INODE_BLOCK_COUNT; blocknum++)
     {
-        //fuse_log(FUSE_LOG_DEBUG, "%s Writing blocknum %ld and buffer %s\n",ALTFS_CREATE_ILIST, blocknum, *buffer);
         if (!fs_write_block(blocknum, buffer)){
             printf("Error writing to inode block number in create function\n");
             return false;
@@ -215,39 +243,21 @@ bool fs_init()
         return false;
     }
     printf("Successfully created inode blocks\n");
-
+    fs_close();
     return true;
 }
 
-bool free_data_block(sType index){
-    if(index <= INODE_BLOCK_COUNT || index > BLOCK_COUNT){
-        return false;
+void restartDisk()
+{
+    if(!fs_write_superblock())
+    {
+        return;
     }
-
-    if(fs_superblock->freelist_head == 0){
-        fs_superblock->freelist_head = index;
-        if(!fs_write_superblock()){
-            return false;
-        }
-        return true;
+    
+    free(fs_superblock);
+    
+    if(!fs_close())
+    {
+        return;
     }
-
-    char buffer[BLOCK_SIZE];
-    memset(buffer, 0, BLOCK_SIZE);
-
-    //Write the value of the current free list head to the data block passed in 
-    sType value = fs_superblock->freelist_head;
-    memcpy(buffer, &value, sizeof(sType));
-    if(!fs_write_block(index, buffer)){
-        return false;
-    }
-
-    //update the value of the freelist_head and persist it
-    fs_superblock->freelist_head = index;
-    if(!fs_write_superblock()){
-        return false;
-    }
-
-    return true;
-
 }

@@ -16,6 +16,8 @@
 
 #define PERSISTANT_DISK "testPersistant.txt"
 
+typedef int64_t sType;
+
 #define BLOCK_SIZE 4096
 #define FS_SIZE 409600000
 #define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
