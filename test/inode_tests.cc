@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include "common_config.h"
-#include "layerZero.h"
-#include "inode.h"
+#include "../header/common_config.h"
+#include "../header/layerZero.h"
+#include "../header/inode.h"
 
 namespace {
 class inodeTests: public::testing::Test{
@@ -16,6 +16,12 @@ protected:
     }
 
 };
+
+TEST_F(inodeTests, DeleteInode) {
+    sType inodeNum = createInode();
+    EXPECT_TRUE(delete_inode(inodeNum)); 
+}
+
 
 TEST_F(inodeTests, InodeNumValid) {
     EXPECT_TRUE(inodeNum_valid(1));
@@ -62,10 +68,7 @@ TEST_F(inodeTests, FreeBlock) {
     inode.directAddresses[0] = 0;
     EXPECT_TRUE(free_block(&inode)); 
 }
-TEST_F(inodeTests, DeleteInode) {
-    sType inodeNum = createInode();
-    EXPECT_TRUE(delete_inode(inodeNum)); 
-}
+
 
 TEST_F(inodeTests, FindCorrectFreeINode) {
     sType inodeNum0 = createInode();
@@ -123,7 +126,7 @@ TEST_F(inodeTests, CreatingInodesAcrossBlocks){
     inodeStruct* inode = loadINodeFromDisk(inodeNum);
     ASSERT_NE(inode, nullptr);  
     free(inode);    
-}
+} 
 
 
 } //Namespace

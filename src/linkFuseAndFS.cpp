@@ -1,8 +1,8 @@
-#include "layerZero.h"
-#include "common_config.h"
-#include "data_block_operation.h"
-#include "inode.h"
-#include "linkFuseAndFS.h"
+#include "../header/layerZero.h"
+#include "../header/common_config.h"
+#include "../header/data_block_operation.h"
+#include "../header/inode.h"
+#include "../header/linkFuseAndFS.h"
 #include <time.h>
 #include <iostream>
 #include <unistd.h>

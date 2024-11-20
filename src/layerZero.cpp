@@ -1,8 +1,8 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#include "layerZero.h"
-#include "common_config.h"
+#include "../header/layerZero.h"
+#include "../header/common_config.h"
 
 struct superblock* fs_superblock = NULL;
 

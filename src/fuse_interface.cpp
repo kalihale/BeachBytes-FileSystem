@@ -12,12 +12,12 @@
 #include <dirent.h>
 #include <assert.h>
 
-#include "fuse_interface.h"
+#include "../header/fuse_interface.h"
 
-#include "data_block_operation.h"
-#include "layerZero.h"
-#include "inode.h"
-#include "linkFuseAndFS.h"
+#include "../header/data_block_operation.h"
+#include "../header/layerZero.h"
+#include "../header/inode.h"
+#include "../header/linkFuseAndFS.h"
 #define FIOC_NAME	"fioc"
 
 enum {

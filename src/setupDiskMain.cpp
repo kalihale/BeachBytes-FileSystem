@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "layerZero.h"
-#include "common_config.h"
+#include "../header/layerZero.h"
+#include "../header/common_config.h"
 
 
 int main(int argc, char *argv[])

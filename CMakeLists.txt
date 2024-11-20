@@ -10,24 +10,25 @@ set(CMAKE_BUILD_TYPE Debug)
 
 
 set(header
-    fuse_interface.h
-    layerZero.h
-    common_config.h
-    inode.h
-    data_block_operation.h
-    linkFuseAndFS.h
+    header/fuse_interface.h
+    header/layerZero.h
+    header/common_config.h
+    header/inode.h
+    header/data_block_operation.h
+    header/linkFuseAndFS.h
 )
 set(src
-    inode.cpp
-    layerZero.cpp
-    fuse_interface.cpp
-    data_block_operation.cpp
-    linkFuseAndFS.cpp
+        src/layerZero.cpp
+
+    src/inode.cpp
+    src/fuse_interface.cpp
+    src/data_block_operation.cpp
+    src/linkFuseAndFS.cpp
  )
 
  set(src2
- setupDiskMain.cpp
- layerZero.cpp
+        src/setupDiskMain.cpp
+        src/layerZero.cpp
  )
 # Find fuse3 with pkg-config
 find_package(PkgConfig REQUIRED)
@@ -61,13 +62,13 @@ enable_testing()
 
 add_executable(
         hello_test
-        hello_test.cc
-        inode_tests.cc
-        inode.cpp
-        layerZero.cpp
-        data_block_operation.cpp
-        common_config.h
-        linkFuseAndFS.cpp
+        test/hello_test.cc
+        test/inode_tests.cc
+        src/inode.cpp
+        src/layerZero.cpp
+        src/data_block_operation.cpp
+        header/common_config.h
+        src/linkFuseAndFS.cpp
 )
 target_link_libraries(
         hello_test

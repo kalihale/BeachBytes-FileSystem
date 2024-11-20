@@ -1,7 +1,7 @@
-#include "common_config.h"
-#include "layerZero.h"
-#include "data_block_operation.h"
-#include "inode.h"
+#include "../header/common_config.h"
+#include "../header/layerZero.h"
+#include "../header/data_block_operation.h"
+#include "../header/inode.h"
 
 bool inodeNum_valid(sType inodeNum){
     return inodeNum >= 0 && inodeNum < INODE_BLOCK_COUNT;
@@ -235,8 +235,6 @@ bool delete_inode(sType inodeNum){
     {
         return false;
     }
-
-    //TODO we have to add every allocated block back to the free list. 
 
     node->deviceID = 0;
     node->fileSerialNum = 0;
@@ -752,8 +750,9 @@ bool remove_datablocks_nested(inodeStruct* inodeObj, sType p_block_num, sType in
 
 bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_block_num)
 {
-    if (logical_block_num >= inodeObj->blocks)
+    if (logical_block_num > inodeObj->blocks)
     {
+        printf("inodeNum invalid\n");
         return false;
     }
 
