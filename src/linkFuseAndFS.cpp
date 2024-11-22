@@ -38,6 +38,7 @@ bool bootUpFileSytem()
     time_t curr_time = time(NULL);
 
     root_dir->is_allocated = true;
+    root_dir->linkCount=1;
     root_dir->i_mode = S_IFDIR | DEFAULT_PERMISSIONS;
     root_dir->blocks = 0;
     root_dir->fileSize = 0;
