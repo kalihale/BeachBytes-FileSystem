@@ -56,6 +56,7 @@ add_executable(
         hello_test
         test/hello_test.cc
         test/inode_tests.cc
+        test/fuse_tests.cc
         src/inode.cpp
         src/layerZero.cpp
         src/data_block_operation.cpp

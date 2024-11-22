@@ -30,6 +30,7 @@ TEST_F(inodeTests, InodeNumValid) {
     EXPECT_TRUE(inodeNum_valid(1));
     EXPECT_FALSE(inodeNum_valid(-1));
     EXPECT_FALSE(inodeNum_valid(INODE_BLOCK_COUNT));
+    EXPECT_TRUE(inodeNum_valid(INODE_BLOCK_COUNT - 1));
 }
 
 TEST_F(inodeTests, GenBlockOffset) {
