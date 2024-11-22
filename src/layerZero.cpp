@@ -153,6 +153,7 @@ bool fs_create_superblock(){
     fs_superblock->iList_size = INODE_BLOCK_COUNT;
     fs_superblock->partitionSize = NUM_OF_DATA_BLOCKS;
     fs_superblock->maxAlloc=INODE_BLOCK_COUNT+1;
+    fs_superblock->freelist_head = 0;
 
     if(fs_superblock->inodes_count == 0)
     {
@@ -177,7 +178,6 @@ bool fs_write_superblock()
         printf("Error writing superblock to memory.\n");
         return false;
     }
-    printf("Superblock written!!!\n");
     return true;
 }
 
