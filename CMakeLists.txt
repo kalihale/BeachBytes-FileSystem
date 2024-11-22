@@ -34,6 +34,8 @@ set(src
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE3 REQUIRED fuse3)
 
+find_package(GTest CONFIG REQUIRED)
+
 # Include directories and link options
 include_directories(${FUSE3_INCLUDE_DIRS})
 link_directories(${FUSE3_LIBRARY_DIRS})
@@ -47,7 +49,7 @@ include_directories(/usr/include)
 
 include(FetchContent)
 FetchContent_Declare(
-        googletest
+  googletest
         URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
 )
 # For Windows: Prevent overriding the parent project's compiler/linker settings
