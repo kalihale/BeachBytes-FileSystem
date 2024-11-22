@@ -19,7 +19,7 @@ typedef int64_t sType;
 #define BLOCK_SIZE 4096
 #define FS_SIZE ((uint64_t) 104857600*5)//1024
 #define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
-#define ADDRESS_SIZE 8
+#define ADDRESS_SIZE sizeof(sType)
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
 #define DEFAULT_PERMISSIONS (S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 
