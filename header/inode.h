@@ -59,4 +59,8 @@ bool copy_parent_path(char* const buffer, const char* const path, sType path_len
 bool copy_file_name(char* const buffer, const char* const path, sType path_len);
 sType get_inode_of_File(const char* const file_path);
 
+
+//TESTING PURPOSES ONLY
+bool directory_contains_entry(inodeStruct* dir_inode, const char* file_name);
+
 #endif //INODE_H

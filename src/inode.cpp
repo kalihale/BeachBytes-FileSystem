@@ -133,78 +133,6 @@ sType createInode(){
 
 }
 
-//recurse = 1 single indirect
-//recurse = 2 double indirect
-//recurse = 3 triple indirect
-bool free_indirect_block(sType blockNum, sType recurse){
-    char buffer[BLOCK_SIZE];
-    if(!fs_read_block(blockNum, buffer)){
-        return false;
-    }
-    sType* blocks = (sType*)buffer;
-    for(sType i = 0; i< BLOCK_SIZE/ADDRESS_SIZE; i++){
-        sType blockid = blocks[i];
-        if(blockid == 0){
-                break;
-        }
-        if(recurse == 1){
-            //these block numbers correspond to direct blocks
-            if(!free_data_block(blockid)){
-                return false;
-            }
-        }
-        else{
-            //we are freeing a double or triple indirect block, so we need to recurse again.
-            if(!free_indirect_block(blockid, recurse-1)){
-                return false;
-            }
-        }
-        
-    }
-
-    return true;
-
-}
-
-
-bool free_block(inodeStruct* iNode){
-    for(sType i = 0; i< NUM_DIRECT_BLOCKS; i++){
-        sType blockid = iNode->directAddresses[i];
-        if(blockid != 0){
-            if(!free_data_block(blockid)){
-                return false;
-            }
-        }
-        else{
-            //if the direct block is empty, then the indirect ones will also be empty
-            //Can we assume this?
-            return true;
-        }
-    }
-
-    // free single indirect blocks
-    if(iNode->singleIndirect != 0){
-        if(!free_indirect_block(iNode->singleIndirect, 1)){
-            return false;
-        }
-    }
-
-    if(iNode->doubleIndirect != 0){
-        if(!free_indirect_block(iNode->doubleIndirect, 2)){
-            return false;
-        }
-    }
-
-    if(iNode->tripleIndirect != 0){
-        if(!free_indirect_block(iNode->tripleIndirect, 3)){
-            return false;
-        }
-    }
-    
-    return true;
-    //TODO free indirect blocks
-}
-
 bool free_All_data_blocks_in_inode(inodeStruct* node)
 {
     if(!remove_datablocks_range_from_inode(node, 0)){
@@ -558,7 +486,6 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
     {
         return false;
     }
-    printf("inside add dir\n\n");
     sType fileNameLen = strlen(file_name);
     if(fileNameLen > FILE_NAME_MAX_LENGTH)
     {
@@ -1204,4 +1131,45 @@ sType get_inode_of_File(const char* const file_path)
     free(p_block);
     
     return inum;
+}
+
+//TESTING PURPOSES ONLY
+bool directory_contains_entry(inodeStruct* dir_inode, const char* file_name) {
+    if (!S_ISDIR(dir_inode->i_mode)) {
+        return false;
+    }
+
+    sType fileNameLen = strlen(file_name);
+    if (dir_inode->blocks <= 0) {
+        return false;
+    }
+
+    sType prev_block = 0;
+    for (sType l_block_num = 0; l_block_num < dir_inode->blocks; l_block_num++) {
+        sType p_block_num = get_datablock_from_inode(dir_inode, l_block_num, &prev_block);
+        if (p_block_num <= 0) {
+            return false;
+        }
+
+        char* assignBlock = read_data_block(p_block_num);
+        sType pos = sizeof(uint64_t);
+        sType block_size = ((uint64_t*) assignBlock)[0];
+
+        while (pos < block_size) {
+            unsigned short record_length = ((unsigned short*)(assignBlock + pos))[0];
+            sType entry_inum = ((sType*)(assignBlock + pos + RECORD_LENGTH))[0];
+            char* entry_name = (char*)(assignBlock + pos + RECORD_FIXED_LEN);
+
+            if (strncmp(entry_name, file_name, fileNameLen) == 0) {
+                free(assignBlock);
+                return true;
+            }
+
+            pos += record_length; 
+        }
+
+        free(assignBlock);
+    }
+
+    return false; 
 }
