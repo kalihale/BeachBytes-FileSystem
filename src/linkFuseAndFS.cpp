@@ -45,7 +45,6 @@ bool bootUpFileSytem()
     root_dir->ctime = curr_time;
     root_dir->mtime = curr_time;
     root_dir->filesCount=0;
-    root_dir->isDirectory=true;
 
     string dir_name = ".";
     if(!add_directory_entry(&root_dir, ROOT_DIR_INODE_NUM,(char*) dir_name.data())){

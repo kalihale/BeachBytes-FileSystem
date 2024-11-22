@@ -147,8 +147,8 @@ TEST_F(inodeTests, DeleteInodeInMiddle){
 TEST_F(inodeTests, AddDirectBlock) {
     sType inodeNum = createInode();
     inodeStruct* inode = loadINodeFromDisk(inodeNum); 
-
-    bool result = add_datablock_to_inode(inode, INODE_BLOCK_COUNT+2);
+    sType block_num = allocate_data_block();
+    bool result = add_datablock_to_inode(inode, block_num);
     EXPECT_TRUE(result);
     EXPECT_TRUE(inode->blocks == 1);
     EXPECT_TRUE(inode->directAddresses[0] = INODE_BLOCK_COUNT+2);
@@ -187,7 +187,6 @@ TEST_F(inodeTests, addDirectoryEntry){
     sType inodeDirectoryNum = createInode();
     inodeStruct* inode = loadINodeFromDisk(inodeDirectoryNum); 
     sType fileInode = createInode();
-    inode->isDirectory = true;
     inode->i_mode = S_IFDIR;
     char fileName[] = "newFile.txt";
     EXPECT_TRUE(add_directory_entry(&inode, fileInode, fileName));
@@ -209,7 +208,6 @@ TEST_F(inodeTests, addDirectoryEntryOnNonDirectoryINode){
 TEST_F(inodeTests, AddingManyFilesToDirectory){
     sType inodeDirectoryNum = createInode();
     inodeStruct* inode = loadINodeFromDisk(inodeDirectoryNum); 
-    inode->isDirectory = true;
     inode->i_mode = S_IFDIR;
     char baseName[] = "newFile";
     int length;
@@ -228,6 +226,64 @@ TEST_F(inodeTests, AddingManyFilesToDirectory){
     }
     
     free(inode);
+}
+
+
+TEST_F(inodeTests, RemovingFromDirectory){
+    sType inodeDirectoryNum = createInode();
+    inodeStruct* inode = loadINodeFromDisk(inodeDirectoryNum); 
+    inode->i_mode = S_IFDIR;
+
+    sType maxAlloc = fs_superblock->maxAlloc;
+
+    char baseName[] = "newFile";
+    int length;
+    EXPECT_TRUE(inode->blocks == 0);
+    //assigning a bunch of files to the directory
+    for(int i = 0; i < 10; i++){
+        length = 9;
+        char * fileName = ((char*)malloc(length*sizeof(char)));
+        snprintf(fileName, length, "%s%d", baseName, i);
+        EXPECT_TRUE(add_directory_entry(&inode, i, fileName));
+        EXPECT_TRUE(directory_contains_entry(inode, fileName));
+        free(fileName);
+    }
+    //Asserting that the free block has changed
+    EXPECT_TRUE(maxAlloc == fs_superblock->maxAlloc-1);
+    EXPECT_TRUE(inode->blocks == 1);
+
+    for(int i = 0; i < 10; i++){
+        length = 9;
+        char * fileName = ((char*)malloc(length*sizeof(char)));
+        snprintf(fileName, length, "%s%d", baseName, i);
+        EXPECT_TRUE(remove_from_directory(&inode, fileName));
+        EXPECT_FALSE(directory_contains_entry(inode, fileName));
+        free(fileName);
+    }
+
+    EXPECT_TRUE(maxAlloc == fs_superblock->maxAlloc);
+    EXPECT_TRUE(inode->blocks == 0);
+}
+
+
+TEST_F(inodeTests, RemovingDataBlocks){
+    sType inodeNum = createInode();
+    inodeStruct* inode = loadINodeFromDisk(inodeNum); 
+    sType initMalloc = fs_superblock->maxAlloc;
+    sType totalBlocks = NUM_DIRECT_BLOCKS+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
+    for(int i = 1; i <= totalBlocks; i++) {
+        sType block_num = allocate_data_block();
+        EXPECT_TRUE(add_datablock_to_inode(inode, block_num));
+    }
+    printf("Initial freelist head%ld\n", fs_superblock->freelist_head);
+    bool result = add_datablock_to_inode(inode, INODE_BLOCK_COUNT+totalBlocks+1);
+    EXPECT_EQ(initMalloc+totalBlocks+3, fs_superblock->maxAlloc);//init malloc +total blocks added + 3 for single/double indirect block
+    EXPECT_EQ(inode->blocks, totalBlocks+1);
+    remove_datablocks_range_from_inode(inode, 0);
+        printf("%ld\n", fs_superblock->freelist_head);
+
+    EXPECT_EQ(inode->blocks, 0);
+
 }
 
 } //Namespace

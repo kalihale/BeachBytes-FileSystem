@@ -182,7 +182,6 @@ bool delete_inode(sType inodeNum){
     node->tripleIndirect=0;
     node->is_allocated=false;
     node->filesCount=0; // number of files or directory in this inode
-    node->isDirectory=false;
     if(!fs_write_block(block, buffer)){
         return false;
     }
@@ -643,6 +642,14 @@ bool remove_from_directory(inodeStruct** dir_inode, char* file_name)
     (*dir_inode)->ctime = curr_time;
     (*dir_inode)->mtime = curr_time;
     (*dir_inode)->filesCount--;
+
+    if((*dir_inode)->filesCount == 0){
+        prev_block = 0;
+        p_plock_num = get_datablock_from_inode(*dir_inode, 0, &prev_block);
+        free_data_block(p_plock_num);
+        (*dir_inode)->blocks = 0;
+
+    }
     return true;
 }
 

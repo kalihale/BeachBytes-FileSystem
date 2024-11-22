@@ -84,8 +84,6 @@ typedef struct inodeStruct {
     //is iNode allocated
     bool is_allocated;// = false;
     sType filesCount; // number of files or directory in this inode
-    bool isDirectory;
-
 }inodeStruct;
 
 extern struct superblock* fs_superblock;// = NULL;
