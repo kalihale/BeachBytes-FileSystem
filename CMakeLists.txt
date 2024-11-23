@@ -34,6 +34,8 @@ set(src
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(FUSE3 REQUIRED fuse3)
 
+find_package(GTest CONFIG REQUIRED)
+
 # Include directories and link options
 include_directories(${FUSE3_INCLUDE_DIRS})
 link_directories(${FUSE3_LIBRARY_DIRS})
@@ -45,16 +47,6 @@ add_executable(setUpDisk ${src2} ${header})
 
 include_directories(/usr/include)
 
-include(FetchContent)
-FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
-
-
 target_link_libraries(cs270 ${FUSE3_LIBRARIES})
 target_include_directories(cs270 PUBLIC ./)
 
@@ -64,6 +56,7 @@ add_executable(
         hello_test
         test/hello_test.cc
         test/inode_tests.cc
+        test/fuse_tests.cc
         src/inode.cpp
         src/layerZero.cpp
         src/data_block_operation.cpp

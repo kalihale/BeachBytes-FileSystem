@@ -38,6 +38,7 @@ bool bootUpFileSytem()
     time_t curr_time = time(NULL);
 
     root_dir->is_allocated = true;
+    root_dir->linkCount=1;
     root_dir->i_mode = S_IFDIR | DEFAULT_PERMISSIONS;
     root_dir->blocks = 0;
     root_dir->fileSize = 0;
@@ -145,6 +146,7 @@ bool fs_mknod(const char* path, mode_t mode, dev_t dev)
 
 sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, sType* parent_inum)
 {
+    printf("create_new_file has been called");
     // getting parent path 
     sType path_len = strlen(path);
     char parent_path[path_len+1];
@@ -253,6 +255,7 @@ sType fs_getattr(const char* path, struct stat** st)
 
 bool fs_mkdir(const char* path, mode_t mode)
 {
+    printf("fs_mkdir called");
     inodeStruct* dir_inode = NULL;
     sType parent_inum;
 
@@ -270,6 +273,7 @@ bool fs_mkdir(const char* path, mode_t mode)
     }
     
     string name = ".";
+    // TODO error on name.data()
     if(!add_directory_entry(&dir_inode, dir_inode_num, name.data()))
     {
         free(dir_inode);
@@ -277,6 +281,7 @@ bool fs_mkdir(const char* path, mode_t mode)
     }
 
     name = "..";
+    // TODO error on name.data()
     if(!add_directory_entry(&dir_inode, parent_inum, name.data()))
     {
         free(dir_inode);
@@ -623,6 +628,7 @@ sType fs_readdir(const char* path, void* buff, fuse_fill_dir_t filler)
             struct stat *stbuff = &stbuff_data;
             inode_to_stat(&file_inode, &stbuff);
             stbuff->st_ino = file_inum;
+            // TODO FUSE_FILL_DIR_DEFAULTS undefined
             filler(buff, file_name, stbuff, 0, FUSE_FILL_DIR_DEFAULTS);  
             free(file_inode);
 

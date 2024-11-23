@@ -134,7 +134,7 @@ static int fioc_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) 
     return fs_chmod(path, mode);
 }
 
-//TODO what is this??
+//TODO chown changes the owner of the file
 static int fioc_chown(const char *path, uid_t uid, gid_t gid, struct fuse_file_info *fi) {
     // Stub for chown
     (void) path;
