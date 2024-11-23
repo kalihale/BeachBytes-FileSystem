@@ -642,14 +642,6 @@ bool remove_from_directory(inodeStruct** dir_inode, char* file_name)
     (*dir_inode)->ctime = curr_time;
     (*dir_inode)->mtime = curr_time;
     (*dir_inode)->filesCount--;
-
-    if((*dir_inode)->filesCount == 0){
-        prev_block = 0;
-        p_plock_num = get_datablock_from_inode(*dir_inode, 0, &prev_block);
-        free_data_block(p_plock_num);
-        (*dir_inode)->blocks = 0;
-
-    }
     return true;
 }
 
@@ -693,7 +685,7 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
     sType ending_block_num = inodeObj->blocks;
     sType starting_block_num = logical_block_num;
     
-    if (logical_block_num <= NUM_DIRECT_BLOCKS)
+    if (logical_block_num < NUM_DIRECT_BLOCKS)
     {
         for (sType i = logical_block_num; i < NUM_DIRECT_BLOCKS && i < ending_block_num; i++)
         {
@@ -750,7 +742,7 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
 
     logical_block_num -= NUM_DIRECT_BLOCKS;
     
-    if (logical_block_num <= NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR)
+    if (logical_block_num < NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR)
     {
         if(inodeObj->singleIndirect == 0)
         {
@@ -809,7 +801,7 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
     
     logical_block_num -= NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
 
-    if (logical_block_num <= NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR)
+    if (logical_block_num < NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR)
     {
         if(inodeObj->doubleIndirect == 0)
         {
@@ -853,7 +845,13 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
             }
 
             free(single_indirect_block_arr);
-            
+            if (!(i == double_i_idx && inner_idx > 0))
+            {
+                if (!free_data_block(data_block_num))
+                {
+                    return false;
+                }
+            }
             
             if (j == ending_block_num)
                 break;
@@ -861,15 +859,17 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
             
             ending_block_num -= NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
 
-            if (!(i == double_i_idx && j > 0))
-            {
-                if (!free_data_block(data_block_num))
-                {
-                    return false;
-                }
-            }
+            //Updated COndition
+            
         }
         free(double_indirect_block_arr);
+        if(logical_block_num == 0){
+            if (!free_data_block(inodeObj->doubleIndirect))
+            {
+                return false;
+            }
+            inodeObj->doubleIndirect = 0;
+        }
 
         if (ending_block_num <= NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR)
         {
@@ -883,6 +883,8 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
         }
         inodeObj->tripleIndirect = 0;
         inodeObj->blocks = starting_block_num;
+        //We need to free the double indirect block as well
+        
         return true;
     }
 
@@ -982,7 +984,13 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
         }
         
         free(triple_indirect_block_arr);
-        
+        if(logical_block_num == 0){
+            if (!free_data_block(logical_block_num))
+            {
+                return false;
+            }
+            inodeObj->tripleIndirect = 0;
+        }
         inodeObj->blocks = starting_block_num;
         return true;
     }

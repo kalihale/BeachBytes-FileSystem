@@ -101,3 +101,25 @@ bool free_data_block(sType index) {
     }
     return true;
 }
+
+//TESTING PURPOSES ONLY
+sType getFreeListLength() {
+    sType length = 1;
+    sType current = fs_superblock->freelist_head;
+
+    while (current != 0) {
+        // Load the data block that the freelist pointer is pointing to.
+        sType* block_data = (sType*) read_data_block(current);
+
+        // Check if this block is the end of the freelist (i.e., points to 0).
+        if (*block_data == 0) {
+            break;
+        }
+
+        // Move to the next block in the freelist
+        current = *block_data;
+        length++;
+    }
+
+    return length;
+}

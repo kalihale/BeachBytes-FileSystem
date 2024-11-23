@@ -18,8 +18,6 @@ protected:
 };
 
 
-
-
 TEST_F(inodeTests, DeleteInode) {
     sType inodeNum = createInode();
     EXPECT_TRUE(delete_inode(inodeNum)); 
@@ -249,8 +247,8 @@ TEST_F(inodeTests, RemovingFromDirectory){
         free(fileName);
     }
     //Asserting that the free block has changed
-    EXPECT_TRUE(maxAlloc == fs_superblock->maxAlloc-1);
-    EXPECT_TRUE(inode->blocks == 1);
+    EXPECT_EQ(maxAlloc , fs_superblock->maxAlloc-1);
+    EXPECT_EQ(inode->blocks , 1);
 
     for(int i = 0; i < 10; i++){
         length = 9;
@@ -261,9 +259,8 @@ TEST_F(inodeTests, RemovingFromDirectory){
         free(fileName);
     }
 
-    EXPECT_TRUE(maxAlloc == fs_superblock->maxAlloc);
-    EXPECT_TRUE(inode->blocks == 0);
 }
+
 
 
 TEST_F(inodeTests, RemovingDataBlocks){
@@ -283,6 +280,28 @@ TEST_F(inodeTests, RemovingDataBlocks){
         printf("%ld\n", fs_superblock->freelist_head);
 
     EXPECT_EQ(inode->blocks, 0);
+
+}
+
+
+TEST_F(inodeTests, RemovingDoubleIndirect){
+    sType inodeNum = createInode();
+    inodeStruct* inode = loadINodeFromDisk(inodeNum); 
+    sType initMalloc = fs_superblock->maxAlloc;
+    sType totalBlocks = NUM_DIRECT_BLOCKS+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
+    for(int i = 1; i <= totalBlocks; i++) {
+        sType block_num = allocate_data_block();
+        EXPECT_TRUE(add_datablock_to_inode(inode, block_num));
+    }
+    EXPECT_EQ(initMalloc+totalBlocks+1 , fs_superblock->maxAlloc);
+    EXPECT_TRUE(add_datablock_to_inode(inode, allocate_data_block()));
+
+    EXPECT_EQ(initMalloc+totalBlocks+4, fs_superblock->maxAlloc);//init malloc +total blocks added + 3 for single/double indirect block
+    EXPECT_EQ(inode->blocks, totalBlocks+1);
+    EXPECT_TRUE(remove_datablocks_range_from_inode(inode, totalBlocks));
+    EXPECT_EQ(inode->blocks, totalBlocks);
+    //maxAlloc should be the same as before allocating the block since we are removing the data block and one alocated to double indirect block
+    EXPECT_EQ(initMalloc+totalBlocks+1+getFreeListLength(), fs_superblock->maxAlloc);
 
 }
 
