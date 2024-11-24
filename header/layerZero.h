@@ -5,7 +5,7 @@
 
 static int64_t fs_ptr;
 static char* fs_memory_ptr;
-static bool inMemory = true;
+static bool inMemory = false;
 
 
 bool fs_open();

@@ -3,13 +3,28 @@ CS270 Project
 
 
 
-To Comiple
+To Comiple in release mode
 
 mkdir build
 cd build
-cmake ..
+touch testPersistant.txt
+cmake -DCMAKE_BUILD_TYPE=release ..
 make
-./cs270
+./setUpDisk
+./cs270 mountFolder
+
+
+To Comiple in debug mode
+
+mkdir build
+cd build
+touch testPersistant.txt
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+make
+./setUpDisk
+./cs270 mountFolder
+
+
 
 ### Note if using CLion:
 
