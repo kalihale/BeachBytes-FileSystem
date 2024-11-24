@@ -20,7 +20,7 @@ protected:
 
 TEST_F(inodeTests, DeleteInode) {
     sType inodeNum = createInode();
-    EXPECT_TRUE(delete_inode(inodeNum)); 
+    EXPECT_TRUE(delete_inode(inodeNum));
 }
 
 
@@ -44,6 +44,7 @@ TEST_F(inodeTests, LoadINodeFromDisk) {
     sType inodeNum = createInode();
     inodeStruct* inode = loadINodeFromDisk(inodeNum);
     ASSERT_NE(inode, nullptr);  
+    EXPECT_TRUE(delete_inode(inodeNum));
     free(inode); 
 } 
 
@@ -62,6 +63,7 @@ TEST_F(inodeTests, GetNextFreeINode) {
 TEST_F(inodeTests, CreateInode) {
     sType inodeNum = createInode();
     EXPECT_EQ(inodeNum, 0); 
+    EXPECT_TRUE(delete_inode(inodeNum));
 }
 
 
@@ -79,6 +81,11 @@ TEST_F(inodeTests, FindCorrectFreeINode) {
     EXPECT_EQ(inodeNum4, 4);
 
     EXPECT_EQ(5, getNextFreeINode());
+    delete_inode(inodeNum0);
+    delete_inode(inodeNum1);
+    delete_inode(inodeNum2);
+    delete_inode(inodeNum3);
+    delete_inode(inodeNum4);
 }
 
 TEST_F(inodeTests, TestDataPersistence){
@@ -109,6 +116,7 @@ TEST_F(inodeTests, TestDataPersistence){
     ASSERT_EQ(inode->atime , 25) ;
     ASSERT_EQ(inode->mtime , 10) ;
     ASSERT_EQ(strcmp(inode->ownerID, "Rithwik"), 0);
+    EXPECT_TRUE(delete_inode(inodeNum));
     free(inode);
 }
 
@@ -120,6 +128,9 @@ TEST_F(inodeTests, CreatingInodesAcrossBlocks){
     }
     inodeStruct* inode = loadINodeFromDisk(inodeNum);
     ASSERT_NE(inode, nullptr);  
+    for(int i = 0; i< 25; i++){
+        delete_inode(i);
+    }
     free(inode);    
 } 
 
@@ -141,6 +152,10 @@ TEST_F(inodeTests, DeleteInodeInMiddle){
     inodeNum3 = createInode();
     ASSERT_EQ(inodeNum3, 3);
 
+    delete_inode(inodeNum0);
+    delete_inode(inodeNum1);
+    delete_inode(inodeNum3);
+    delete_inode(inodeNum4);
 }
 
 TEST_F(inodeTests, AddDirectBlock) {
@@ -151,6 +166,8 @@ TEST_F(inodeTests, AddDirectBlock) {
     EXPECT_TRUE(result);
     EXPECT_TRUE(inode->blocks == 1);
     EXPECT_TRUE(inode->directAddresses[0] = INODE_BLOCK_COUNT+2);
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
 }
 
 TEST_F(inodeTests, AddSingleIndirectBlock) {
@@ -165,6 +182,8 @@ TEST_F(inodeTests, AddSingleIndirectBlock) {
     EXPECT_TRUE(result);
     EXPECT_TRUE(inode->blocks == NUM_DIRECT_BLOCKS+1);
     EXPECT_TRUE(inode->singleIndirect = INODE_BLOCK_COUNT+1+11);
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
 }
 
 TEST_F(inodeTests, AddDoubleIndirectBlock) {
@@ -180,6 +199,8 @@ TEST_F(inodeTests, AddDoubleIndirectBlock) {
     EXPECT_TRUE(inode->blocks == totalBlocks+1);
     EXPECT_TRUE(inode->singleIndirect = INODE_BLOCK_COUNT+1+11);
     EXPECT_TRUE(inode->doubleIndirect = INODE_BLOCK_COUNT+totalBlocks+1);
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
 }
 
 TEST_F(inodeTests, addDirectoryEntry){
@@ -190,6 +211,7 @@ TEST_F(inodeTests, addDirectoryEntry){
     char fileName[] = "newFile.txt";
     EXPECT_TRUE(add_directory_entry(&inode, fileInode, fileName));
     EXPECT_TRUE(directory_contains_entry(inode, fileName));
+    EXPECT_TRUE(delete_inode(inodeDirectoryNum));
     free(inode);
 }
 
@@ -201,6 +223,7 @@ TEST_F(inodeTests, addDirectoryEntryOnNonDirectoryINode){
     char fileName[] = "newFile.txt";
     EXPECT_FALSE(add_directory_entry(&inode, fileInode, fileName));
     EXPECT_FALSE(directory_contains_entry(inode, fileName));
+    EXPECT_TRUE(delete_inode(inodeDirectoryNum));
     free(inode);
 }
 
@@ -210,12 +233,12 @@ TEST_F(inodeTests, AddingManyFilesToDirectory){
     inode->i_mode = S_IFDIR;
     char baseName[] = "newFile";
     int length;
-    for(int i = 0; i < 100; i++){
+    for(sType i = 0; i < 100; i++){
         if(i < 10){
-            length = 8;
+            length = 9;
         }
         else{
-            length = 9;
+            length = 10;
         }
         char * fileName = ((char*)malloc(length*sizeof(char)));
         snprintf(fileName, length, "%s%d", baseName, i);
@@ -224,9 +247,9 @@ TEST_F(inodeTests, AddingManyFilesToDirectory){
         free(fileName);
     }
     
+    EXPECT_TRUE(delete_inode(inodeDirectoryNum));
     free(inode);
-}
-
+} 
 
 TEST_F(inodeTests, RemovingFromDirectory){
     sType inodeDirectoryNum = createInode();
@@ -260,6 +283,9 @@ TEST_F(inodeTests, RemovingFromDirectory){
         free(fileName);
     }
 
+    EXPECT_TRUE(delete_inode(inodeDirectoryNum));
+    free(inode);
+
 }
 
 
@@ -282,6 +308,9 @@ TEST_F(inodeTests, RemovingDataBlocks){
 
     EXPECT_EQ(inode->blocks, 0);
 
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
+
 }
 
 
@@ -303,7 +332,58 @@ TEST_F(inodeTests, RemovingDoubleIndirect){
     EXPECT_EQ(inode->blocks, totalBlocks);
     //maxAlloc should be the same as before allocating the block since we are removing the data block and one alocated to double indirect block
     EXPECT_EQ(initMalloc+totalBlocks+1+getFreeListLength(), fs_superblock->maxAlloc);
-
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
 }
+
+
+TEST_F(inodeTests, RemovingTripleIndirect){
+
+    //In common_config set block size to 409 and file size to 409000000
+    //Won't pass in memory otherwise
+    sType inodeNum = createInode();
+    inodeStruct* inode = loadINodeFromDisk(inodeNum); 
+    sType initMalloc = fs_superblock->maxAlloc;
+    sType totalBlocks = NUM_DIRECT_BLOCKS+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR + NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR;
+    for(int i = 1; i <= totalBlocks; i++) {
+        sType block_num = allocate_data_block();
+        EXPECT_TRUE(add_datablock_to_inode(inode, block_num));
+    }
+    EXPECT_EQ(initMalloc+totalBlocks+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR+2 , fs_superblock->maxAlloc);
+    EXPECT_TRUE(add_datablock_to_inode(inode, allocate_data_block()));
+    EXPECT_EQ(initMalloc+totalBlocks+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR+6, fs_superblock->maxAlloc);//init malloc +total blocks added + 3 for single/double indirect block
+    EXPECT_EQ(inode->blocks, totalBlocks+1);
+    EXPECT_TRUE(remove_datablocks_range_from_inode(inode, totalBlocks));
+    EXPECT_EQ(inode->blocks, totalBlocks);
+    //maxAlloc should be the same as before allocating the block since we are removing the data block and one alocated to double indirect block
+    EXPECT_EQ(initMalloc+totalBlocks+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR+2+getFreeListLength(), fs_superblock->maxAlloc);
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
+}
+
+TEST_F(inodeTests, RemovingTripleIndirectPart2){
+
+    //In common_config set block size to 409 and file size to 409000000
+    //Won't pass in memory otherwise
+    sType inodeNum = createInode();
+    inodeStruct* inode = loadINodeFromDisk(inodeNum); 
+    sType initMalloc = fs_superblock->maxAlloc;
+    sType totalBlocks = NUM_DIRECT_BLOCKS+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR + NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR*3;
+    sType beforeTripleIndirect = NUM_DIRECT_BLOCKS+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR + NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR;
+    for(int i = 1; i <= totalBlocks; i++) {
+        sType block_num = allocate_data_block();
+        EXPECT_TRUE(add_datablock_to_inode(inode, block_num));
+    }
+    sType tripleDataBlocksAdded = 1+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR*2 + 2;
+    
+    EXPECT_EQ(initMalloc+totalBlocks+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR+2+tripleDataBlocksAdded, fs_superblock->maxAlloc);//init malloc +total blocks added + 3 for single/double indirect block
+    EXPECT_EQ(inode->blocks, totalBlocks);
+    EXPECT_TRUE(remove_datablocks_range_from_inode(inode, beforeTripleIndirect));
+    EXPECT_EQ(inode->blocks, beforeTripleIndirect);
+    EXPECT_EQ(initMalloc+beforeTripleIndirect+NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR+2+getFreeListLength(), fs_superblock->maxAlloc);
+    EXPECT_TRUE(delete_inode(inodeNum));
+    free(inode);
+}
+
 
 } //Namespace
