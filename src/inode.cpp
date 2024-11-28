@@ -504,17 +504,17 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
             }
 
             char* assignBlock = read_data_block(p_block_num);
-            sType curr_pos = sizeof(uint64_t)+((uint64_t*) assignBlock)[0];
-            
-            if(BLOCK_SIZE-(((uint64_t*) assignBlock)[0])-RECORD_FIXED_LEN-sizeof(uint64_t) >=fileNameLen){
-                unsigned short record_length = RECORD_FIXED_LEN + (unsigned short)fileNameLen;
+            sType curr_pos = sizeof(sType)+((sType*) assignBlock)[0];
+            sType freeSpace = BLOCK_SIZE-curr_pos-RECORD_FIXED_LEN-sizeof(sType);
+            if(freeSpace > fileNameLen){
+                sType record_length = RECORD_FIXED_LEN + fileNameLen;
                 char* record = assignBlock + curr_pos;
-                
-                ((unsigned short*)record)[0] = record_length;
-                
-                ((sType*)(record + RECORD_LENGTH))[0] = child_inum;
-                ((uint64_t*) assignBlock)[0]+=record_length;
-                strncpy((char*)(record + RECORD_FIXED_LEN), file_name, fileNameLen);
+
+
+                memcpy(record, &record_length, sizeof(sType));
+                memcpy(record + RECORD_LENGTH, &child_inum, sizeof(sType));
+                ((sType*) assignBlock)[0]+=record_length;
+                strncpy(record + RECORD_FIXED_LEN, file_name, fileNameLen);
 
                 if(!write_data_block(p_block_num, assignBlock)){
                     free(assignBlock);
@@ -525,7 +525,6 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
                 free(assignBlock);
                 return true;
             }
-
             free(assignBlock);
         }
     }
@@ -539,15 +538,13 @@ bool add_directory_entry(inodeStruct** dir_inode, sType child_inum, char* file_n
     char data_block[BLOCK_SIZE];
     memset(data_block, 0, BLOCK_SIZE);
 
-    unsigned short record_length = RECORD_FIXED_LEN + (unsigned short)fileNameLen;
-    ((uint64_t*) data_block)[0]=record_length;
-    int addPadSize = sizeof(uint64_t); 
+    sType record_length = RECORD_FIXED_LEN + fileNameLen;
+    ((sType*) data_block)[0]=record_length;
+    memcpy(data_block  + RECORD_LENGTH, &record_length, sizeof(sType));
+    memcpy(data_block  + RECORD_LENGTH*2, &child_inum, sizeof(sType));
 
-    ((unsigned short*)(data_block + addPadSize))[0] = record_length;
-   
-    ((sType*)(data_block + addPadSize + RECORD_LENGTH))[0] = child_inum;
   
-    strncpy((char*)(data_block + addPadSize + RECORD_FIXED_LEN), file_name, fileNameLen);
+    strncpy((char*)(data_block + RECORD_FIXED_LEN+RECORD_LENGTH), file_name, fileNameLen);
 
     if(!write_data_block(data_block_num, data_block))
     {
@@ -591,16 +588,16 @@ bool remove_from_directory(inodeStruct** dir_inode, char* file_name)
         }
 
         p_block = read_data_block(p_plock_num);
-        if((uint64_t*)p_block==0){
+        if((sType*)p_block==0){
             free(p_block);
             continue;
         }
-        sType curr_pos = sizeof(uint64_t);
+        sType curr_pos = sizeof(sType);
         while(curr_pos <= (BLOCK_SIZE-RECORD_FIXED_LEN))
         {
-            unsigned short record_len = ((unsigned short*)(p_block + curr_pos))[0];
+            sType record_len = ((sType*)(p_block + curr_pos))[0];
             char* curr_file_name = p_block + curr_pos + RECORD_FIXED_LEN;
-            unsigned short curr_file_name_len = ((unsigned short)(record_len - RECORD_FIXED_LEN - 1));  // adjust for \0
+            sType curr_file_name_len = ((sType)(record_len - RECORD_FIXED_LEN - 1));  // adjust for \0
             
             if (record_len == 0)
                 break;
@@ -626,8 +623,8 @@ bool remove_from_directory(inodeStruct** dir_inode, char* file_name)
 
     char buffer[BLOCK_SIZE];
     memset(buffer, 0, BLOCK_SIZE);
-    unsigned short rec_len = ((unsigned short*)(p_block + offset))[0];
-    ((uint64_t*)p_block)[0]-=rec_len;
+    sType rec_len = ((sType*)(p_block + offset))[0];
+    ((sType*)p_block)[0]-=rec_len;
     memcpy(buffer, p_block, offset);
     
     sType next_offset = offset + rec_len;
@@ -890,7 +887,7 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
 
     logical_block_num -= NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR;
 
-    if (logical_block_num <= NUM_OF_TRIPLE_INDIRECT_BLOCK_ADDR)
+    if (logical_block_num < NUM_OF_TRIPLE_INDIRECT_BLOCK_ADDR)
     {
         if(inodeObj->tripleIndirect == 0)
         {
@@ -909,7 +906,7 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
         //TODO check the correctness
 
         ending_block_num -= (NUM_OF_DOUBLE_INDIRECT_BLOCK_ADDR * triple_i_idx) + (NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR * double_i_idx); 
-
+        //Iterating through the triple indirect block
         for(sType i = triple_i_idx; i < NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR; i++)
         {
             sType data_block_num = triple_indirect_block_arr[i];
@@ -921,9 +918,9 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
             sType j = (i == triple_i_idx) ? double_i_idx : 0;
             sType* double_indirect_block_arr = (sType*) read_data_block(data_block_num);
 
-            bool should_free_double_indirect = (j == double_i_idx) ? false : true;
+            bool should_free_double_indirect = (j == 0);
             bool should_free_single_indirect, has_reached_end = false;
-
+            //iterating through the double indirect block
             for(;j < NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR; j++)
             {
                 sType single_indirect_data_block_num = double_indirect_block_arr[j];
@@ -934,8 +931,8 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
                 sType k = (j == double_i_idx) ? inner_idx : 0;
                 sType* single_indirect_block_arr = (sType*) read_data_block(single_indirect_data_block_num);
                 
-                should_free_single_indirect = (k == inner_idx) ? false : true;
-
+                should_free_single_indirect = (k == 0);
+                // iterating through the single indirect block
                 for(; k < NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR && k < ending_block_num; k++) // TODO: Check if the bounds checking for i,j,k, are right
                 {
                     if (!free_data_block(single_indirect_block_arr[k]))
@@ -952,14 +949,6 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
 
                 free(single_indirect_block_arr);
 
-                if (k == ending_block_num)
-                {
-                    has_reached_end = true;
-                    break;
-                }
-
-                ending_block_num -= NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
-
                 // free single indirect block
                 if (should_free_single_indirect)
                 {
@@ -968,12 +957,18 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
                         return false;
                     }
                 }
+
+                if (k == ending_block_num)
+                {
+                    has_reached_end = true;
+                    break;
+                }
+
+                ending_block_num -= NUM_OF_SINGLE_INDIRECT_BLOCK_ADDR;
+
+                
             }
             free(double_indirect_block_arr);
-
-            if (has_reached_end)
-                break;
-
             if (should_free_double_indirect)
             {
                 if (!free_data_block(data_block_num))
@@ -981,11 +976,16 @@ bool remove_datablocks_range_from_inode(inodeStruct* inodeObj, sType logical_blo
                     return false;
                 }
             }
+
+            if (has_reached_end)
+                break;
+
+            
         }
         
         free(triple_indirect_block_arr);
         if(logical_block_num == 0){
-            if (!free_data_block(logical_block_num))
+            if (!free_data_block(inodeObj->tripleIndirect))
             {
                 return false;
             }
@@ -1101,16 +1101,16 @@ sType get_inode_of_File(const char* const file_path)
         }
 
         p_block = read_data_block(p_plock_num);
-        if(((uint64_t*)p_block)[0]==0){
+        if(((sType*)p_block)[0]==0){
             free(p_block);
             continue;
         }
-        sType curr_pos = sizeof(uint64_t);
+        sType curr_pos = sizeof(sType);
         while(curr_pos <= (BLOCK_SIZE-RECORD_FIXED_LEN))
         {
-            unsigned short record_len = ((unsigned short*)(p_block + curr_pos))[0];
+            sType record_len = ((sType*)(p_block + curr_pos))[0];
             char* curr_file_name = p_block + curr_pos + RECORD_FIXED_LEN;
-            unsigned short curr_file_name_len = ((unsigned short)(record_len - RECORD_FIXED_LEN - 1));  // adjust for \0
+            sType curr_file_name_len = ((sType)(record_len - RECORD_FIXED_LEN - 1));  // adjust for \0
             
             if (record_len == 0)
                 break;
@@ -1167,11 +1167,11 @@ bool directory_contains_entry(inodeStruct* dir_inode, const char* file_name) {
         }
 
         char* assignBlock = read_data_block(p_block_num);
-        sType pos = sizeof(uint64_t);
-        sType block_size = ((uint64_t*) assignBlock)[0];
+        sType pos = sizeof(sType);
+        sType block_size = ((sType*) assignBlock)[0];
 
         while (pos < block_size) {
-            unsigned short record_length = ((unsigned short*)(assignBlock + pos))[0];
+            sType record_length = ((sType*)(assignBlock + pos))[0];
             sType entry_inum = ((sType*)(assignBlock + pos + RECORD_LENGTH))[0];
             char* entry_name = (char*)(assignBlock + pos + RECORD_FIXED_LEN);
 

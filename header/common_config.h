@@ -18,7 +18,7 @@
 
 typedef int64_t sType;
 
-#define BLOCK_SIZE 4096
+#define BLOCK_SIZE (sType)4096
 #define FS_SIZE 4096000000
 #define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
 #define ADDRESS_SIZE sizeof(sType) 
@@ -31,9 +31,9 @@ typedef int64_t sType;
 
 //directory info
 #define FILE_NAME_MAX_LENGTH ((sType) 255)
-#define RECORD_LENGTH ((unsigned short) 2) // size to stores the info of length
+#define RECORD_LENGTH ((unsigned short) 8) // size to stores the info of length
 #define RECORD_INUM ((sType) 8)   // size to store the inode
-#define RECORD_FIXED_LEN ((unsigned short)(RECORD_LENGTH + RECORD_INUM))
+#define RECORD_FIXED_LEN ((sType)(RECORD_LENGTH + RECORD_INUM))
 
 
 typedef struct superblock

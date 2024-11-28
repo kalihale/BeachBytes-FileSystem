@@ -3,26 +3,30 @@ CS270 Project
 
 
 
-To Comiple in release mode
+## To Compile in release mode
 
+```
 mkdir build
 cd build
 touch testPersistant.txt
 cmake -DCMAKE_BUILD_TYPE=release ..
 make
 ./setUpDisk
-./cs270 mountFolder
+./cs270 <mountFolder>
+```
 
 
-To Comiple in debug mode
+## To Compile in debug mode
 
+```
 mkdir build
 cd build
 touch testPersistant.txt
 cmake -DCMAKE_BUILD_TYPE=Debug ..
 make
 ./setUpDisk
-./cs270 mountFolder
+./cs270 <mountFolder>
+```
 
 
 
