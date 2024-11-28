@@ -133,6 +133,7 @@ bool fs_mknod(const char* path, mode_t mode, dev_t dev)
 
     sType parent_inum;
     inum = create_new_file(path, &node, mode, &parent_inum);
+    printf("INODE NUM %d\n\n", inum);
 
     if (inum <= -1)
     {
@@ -447,6 +448,9 @@ sType fs_truncate(const char* path, off_t length)
 
 sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset)
 {
+    printf("Write attempt: path=%s, nbytes=%zu, offset=%lld\n", path, nbytes, (long long)offset);
+    printf("WRITE CONTENT %s\n\n", buff);
+    
     if(nbytes == 0)
     {
         return 0;
@@ -467,6 +471,7 @@ sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset)
     if(!node){
         return -1;
     }
+    printf("Current file size: %lld, Blocks: %lld\n", (long long)node->fileSize, (long long)node->blocks);
     size_t bytes_written = 0;
 
     sType start_i_block = (sType)(offset / BLOCK_SIZE);
@@ -707,6 +712,8 @@ sType fs_openFile(const char* path, sType oflag)
 
 sType fs_read(const char* path, char* buff, size_t nbytes, off_t offset)
 {
+    printf("Read attempt: path=%s, nbytes=%zu, offset=%lld\n", path, nbytes, (long long)offset);
+
     if(nbytes == 0)
     {
         return 0;
@@ -724,6 +731,8 @@ sType fs_read(const char* path, char* buff, size_t nbytes, off_t offset)
     }
 
     inodeStruct* node= loadINodeFromDisk(inum);
+    printf("Current file size: %lld, Blocks: %lld\n", (long long)node->fileSize, (long long)node->blocks);
+
    if(!node){return -ENOENT;}
     if (node->fileSize == 0)
     {

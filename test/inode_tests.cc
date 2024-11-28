@@ -18,6 +18,7 @@ protected:
 };
 
 
+
 TEST_F(inodeTests, DeleteInode) {
     sType inodeNum = createInode();
     EXPECT_TRUE(delete_inode(inodeNum));
@@ -299,7 +300,6 @@ TEST_F(inodeTests, RemovingDataBlocks){
         sType block_num = allocate_data_block();
         EXPECT_TRUE(add_datablock_to_inode(inode, block_num));
     }
-    printf("Initial freelist head%ld\n", fs_superblock->freelist_head);
     bool result = add_datablock_to_inode(inode, INODE_BLOCK_COUNT+totalBlocks+1);
     EXPECT_EQ(initMalloc+totalBlocks+3, fs_superblock->maxAlloc);//init malloc +total blocks added + 3 for single/double indirect block
     EXPECT_EQ(inode->blocks, totalBlocks+1);

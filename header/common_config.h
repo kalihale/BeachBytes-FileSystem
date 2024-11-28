@@ -19,7 +19,7 @@
 typedef int64_t sType;
 
 #define BLOCK_SIZE (sType)4096
-#define FS_SIZE 4096000000
+#define FS_SIZE 409600000
 #define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
 #define ADDRESS_SIZE sizeof(sType) 
 

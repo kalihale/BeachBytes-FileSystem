@@ -1012,6 +1012,8 @@ bool copy_parent_path(char* const buffer, const char* const path, sType path_len
     sType index = get_last_index_of_parent_path(path, path_len);
     if(index == -1)
     {
+        buffer[0] = '/';
+        buffer[1] = '\0';
         return false;
     }
 
@@ -1033,10 +1035,12 @@ bool copy_file_name(char* const buffer, const char* const path, sType path_len)
     
     if(start_index == -1)
     {
-        return false;
+        start_index = 0; 
     }
-
-    start_index++;
+    else
+    {
+        start_index++; 
+    }
     
     // remove trailing /
     if(path[end_index-1]=='/'){

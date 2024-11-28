@@ -28,6 +28,7 @@ enum {
 
 static void *fioc_buf;
 static size_t fioc_size;
+bool debug = true;
 
 // static int fioc_resize(size_t new_size)
 // {
@@ -59,7 +60,8 @@ static int fioc_expand(size_t new_size)
 static int fioc_getattr(const char *path, struct stat *stbuf,
 			struct fuse_file_info *fi)
 {
-	printf("Getting attribute for path %s\n", path);
+    if (debug)
+	    printf("Getting attribute for path %s\n", path);
 
 	// stbuf->st_uid = getuid();
 	// stbuf->st_gid = getgid();
@@ -147,7 +149,8 @@ static int fioc_truncate(const char *path, off_t size,
 			 struct fuse_file_info *fi)
 {
 	(void) fi;
-	printf("sdfasd\n\n");
+	if (debug)
+	    printf("CALLING FIOC_TRUNCATE\n\n");
 	// if (fioc_file_type(path) != FIOC_FILE)
 	// 	return -EINVAL;
     return fs_truncate(path, size);
@@ -157,7 +160,8 @@ static int fioc_truncate(const char *path, off_t size,
 static int fioc_open(const char *path, struct fuse_file_info *fi)
 {
 	
-	printf("PATH PASSED IN %s", path);
+	if (debug)
+	    printf("PATH PASSED IN %s\n", path);
 	ssize_t inum = fs_openFile(path, fi->flags);
     if(inum <= -1)
     {
@@ -172,6 +176,8 @@ static int fioc_read(const char *path, char *buf, size_t size,
 	(void) fi;
 	// if (fioc_file_type(path) != FIOC_FILE)
 	// 	return -EINVAL;
+    if (debug)
+	    printf("CALLING FIOC_READ \n\n");
     printf("reading file : %s\n", path);
 	sType nbytes = fs_read(path, buf, size, offset);
     return nbytes;
@@ -181,34 +187,31 @@ static int fioc_read(const char *path, char *buf, size_t size,
 
 static int fioc_write(const char *path,const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	printf("sdfasd\n\n");
-	//  if (fioc_expand(offset + size))
-	//  	return -ENOMEM;
-	// unsigned char *str = (unsigned char *)malloc(sizeof(char)*size);
-	// int i=0;
-	// while (buf[i] != '\0') {
-    //     str[i] = toupper(buf[i]);
-    //     i++;
-    // }
-	// memcpy(fioc_buf + offset,str, size);
-
-	// return size;
+	if (debug)
+	    printf("CALLING FIOC_WRITE \n");
     return fs_write(path, buf, size, offset);
 }
 
 static int fioc_statfs(const char *path, struct statvfs *stbuf) {
+    if (debug)
+	    printf("CALLING FIOC_statfs \n");
     (void) path;
     (void) stbuf;
     return -ENOSYS;
 }
 
 static int fioc_flush(const char *path, struct fuse_file_info *fi) {
+    if (debug)
+	    printf("CALLING FIOC_flush \n");
+	    
     (void) path;
     (void) fi;
     return -ENOSYS;
 }
 
 static int fioc_release(const char *path, struct fuse_file_info *fi) {
+    if (debug)
+	    printf("CALLING FIOC_release \n");
     (void) path;
     (void) fi;
     return -ENOSYS;
@@ -252,6 +255,8 @@ static int fioc_removexattr(const char *path, const char *name) {
 }
 
 static int fioc_opendir(const char *path, struct fuse_file_info *fi) {
+    if (debug)
+	    printf("CALLING FIOC_OPENDIR \n");
     (void) path;
     (void) fi;
     return -ENOSYS;
@@ -261,10 +266,11 @@ static int fioc_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 			off_t offset, struct fuse_file_info *fi,
 			enum fuse_readdir_flags flags)
 {
+    if (debug)
+	    printf("CALLING FIOC_READDIR \n\n");
 	(void) fi;
 	(void) offset;
 	(void) flags;
-	printf("readdir\n\n");
 	// if (fioc_file_type(path) != FIOC_ROOT)
 	// 	return -ENOENT;
 
@@ -305,7 +311,8 @@ static int fioc_access(const char *path, int mask) {
 }
 
 static int fioc_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
-    printf("Creating file: %s\n", path);
+    if (debug)
+	    printf("CALLING FIOC_CREATE WITH PATH %s \n", path);
     bool status = false;
     if(fi->flags & O_CREAT)
     {
@@ -315,7 +322,7 @@ static int fioc_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     {
         status = fs_mknod(path, S_IFREG|0775, -1);
     }
-
+    
     if(!status)
     {
         return -1;
@@ -451,7 +458,7 @@ static const struct fuse_operations fioc_oper = {
 	//.release = fioc_release,
 	// .fsync = fioc_fsync, 
 	// .setxattr = fioc_setxattr,
-	// .getxattr = fioc_getxattr,
+	 .getxattr = fioc_getxattr,
 	// .listxattr = fioc_listxattr,
 	// .removexattr = fioc_removexattr,
 	//.opendir = fioc_opendir,
