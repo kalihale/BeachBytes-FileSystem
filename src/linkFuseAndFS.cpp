@@ -51,7 +51,7 @@ bool bootUpFileSytem()
     if(!add_directory_entry(&root_dir, ROOT_DIR_INODE_NUM,(char*) dir_name.data())){
         return false;
     }
-    printf("%lu %lu :blocks number\n",root_dir->fileSize,root_dir->blocks);
+    printf("%lu %lu %lu %lu %lu :blocks number\n",root_dir->fileSize,root_dir->blocks,INODE_BLOCK_COUNT,BLOCK_COUNT,INODES_PER_BLOCK);
     dir_name = "..";
     if(!add_directory_entry(&root_dir, ROOT_DIR_INODE_NUM,(char*) dir_name.data())){
         return false;

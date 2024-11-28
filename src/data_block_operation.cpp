@@ -13,6 +13,11 @@ sType allocate_data_block()
     //allocating the first non allocated block
     if(fs_superblock->maxAlloc!=NUM_OF_DATA_BLOCKS){
         allocated_bk_no=fs_superblock->maxAlloc++;
+        char* tempBlock=(char*)calloc(sizeof(char),BLOCK_SIZE);
+        if(!write_data_block(allocated_bk_no, tempBlock))
+        {
+            return -1;
+        }
         if(!fs_write_superblock())
         {
             return -1;
