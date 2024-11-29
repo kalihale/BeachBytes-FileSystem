@@ -1012,9 +1012,10 @@ bool copy_parent_path(char* const buffer, const char* const path, sType path_len
     sType index = get_last_index_of_parent_path(path, path_len);
     if(index == -1)
     {
+        printf("IN FALSE CASE");
         buffer[0] = '/';
         buffer[1] = '\0';
-        return false;
+        return true;
     }
 
     if(index == 0)
@@ -1086,12 +1087,13 @@ sType get_inode_of_File(const char* const file_path)
 
     if (!S_ISDIR((inodeObj)->i_mode))
     {
-        return false;
+        free(inodeObj);
+        return -1;
     }
 
     sType file_name_len = strlen(child_path);
     if(file_name_len > FILE_NAME_MAX_LENGTH){
-        return false;
+        return -1;
     }
 
     sType prev_block = 0;
@@ -1101,7 +1103,8 @@ sType get_inode_of_File(const char* const file_path)
 
         if(p_plock_num <= 0)
         {
-            return false;
+            free(inodeObj);
+            return -1;
         }
 
         p_block = read_data_block(p_plock_num);
