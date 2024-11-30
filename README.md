@@ -17,6 +17,13 @@ sudo chmod 666 /dev/loop4
 ```
 4. Run as below.
 
+## To remove the loop device
+
+```
+sudo umount <mount directory>
+sudo losetup -d /dev/loop4
+```
+
 
 ## To Compile in release mode
 
