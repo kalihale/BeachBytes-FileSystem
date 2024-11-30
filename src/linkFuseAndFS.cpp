@@ -82,19 +82,21 @@ struct stat {
     blkcnt_t  st_blocks;      Number of 512B blocks allocated
 }
 */
-static void inode_to_stat(inodeStruct** node, struct stat** st){
-    (*st)->st_mode = (*node)->i_mode;
-    (*st)->st_nlink = (*node)->linkCount;
-    (*st)->st_uid = getgid(); 
-    (*st)->st_gid = getgid(); 
-    (*st)->st_rdev = 0;
-    (*st)->st_size = (*node)->fileSize;
-    (*st)->st_blksize = BLOCK_SIZE;
-    (*st)->st_blocks = (*node)->blocks;
-    (*st)->st_atime = (*node)->atime;
-    (*st)->st_ctime = (*node)->ctime;
-    (*st)->st_mtime = (*node)->mtime;
-    printf("%d %d %lu %lu :stat\n",(*node)->i_mode,(*node)->linkCount,(*node)->fileSize,(*node)->blocks);
+static void inode_to_stat(inodeStruct* node, struct stat* st){
+    st->st_mode = node->i_mode;
+    st->st_nlink = node->linkCount;
+    st->st_uid = getuid(); 
+    st->st_gid = getgid(); 
+    st->st_rdev = 0;
+    st->st_size = node->fileSize;
+    st->st_blksize = BLOCK_SIZE;
+    st->st_blocks = node->blocks;
+    st->st_atime = node->atime;
+    st->st_ctime = node->ctime;
+    st->st_mtime = node->mtime;
+    printf("%d %d %lu %lu :stat\n", node->i_mode, node->linkCount, node->fileSize, node->blocks);
+    printf("access time %ld, modify time %ld, change time %ld\n\n",
+           (long)st->st_atime, (long)st->st_mtime, (long)st->st_ctime);
 }
 
 
@@ -209,6 +211,8 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
     if(!*buff){
         return -1;
     }
+
+    printf("CURRENT TIME %d\n", curr_time);
     (*buff)->linkCount = 1;
     (*buff)->i_mode = mode;
     (*buff)->blocks = 0;
@@ -217,7 +221,7 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
     (*buff)->mtime = curr_time;
     (*buff)->ctime = curr_time;
     (*buff)->filesCount = 0;
-
+    printf("Stored Time %d\n", (*buff)->atime);
     if(!writeINodeToDisk(child_inode_num, *buff))
     {
         free(*buff);
@@ -229,9 +233,9 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
     return child_inode_num;
 }
 
-sType fs_getattr(const char* path, struct stat** st)
+sType fs_getattr(const char* path, struct stat* st)
 {
-    memset(*st, 0, sizeof(struct stat));
+    memset(st, 0, sizeof(struct stat));
     sType inum = get_inode_of_File(path);
     if(inum == -1)
     {
@@ -246,8 +250,10 @@ sType fs_getattr(const char* path, struct stat** st)
         return -EIO;
     }
 
-    inode_to_stat(&node, st);
-    (*st)->st_ino = inum;
+    inode_to_stat(node, st);
+    printf("INODE VALUES %ld, %ld\n\n", node->atime, node->mtime);
+    (st)->st_ino = inum;
+    printf("stat VALUES %ld, %ld\n\n", st->st_atime, st->st_mtime);
     free(node);
 
     return 0;
@@ -451,154 +457,132 @@ sType fs_truncate(const char* path, off_t length)
     return 0;
 }
 
-sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset)
-{
+sType fs_write(const char* path, const char* buff, size_t nbytes, off_t offset) {
     printf("Write attempt: path=%s, nbytes=%zu, offset=%lld\n", path, nbytes, (long long)offset);
-    printf("WRITE CONTENT %.*s\n\n", (int)nbytes, buff);
-    
-    if(nbytes == 0)
-    {
+    if (nbytes == 0) {
         return 0;
     }
 
-    if(offset < 0)
-    {
+    if (offset < 0) {
         return -EINVAL;
     }
 
     sType inum = get_inode_of_File(path);
-    if (inum == -1)
-    {
+    if (inum == -1) {
         return -ENOENT;
     }
 
     inodeStruct* node = loadINodeFromDisk(inum);
-    if(!node){
-        return -1;
+    if (!node) {
+        return -EIO;
     }
+
     printf("Current file size: %lld, Blocks: %lld\n", (long long)node->fileSize, (long long)node->blocks);
+
     size_t bytes_written = 0;
+    off_t end_offset = offset + nbytes;
 
     sType start_block = (sType)(offset / BLOCK_SIZE);
-    sType end_block = (sType)((offset + nbytes - 1) / BLOCK_SIZE);
+    sType end_block = (sType)((end_offset - 1) / BLOCK_SIZE);
     sType start_block_offset = (sType)(offset % BLOCK_SIZE);
-    sType end_block_offset = (sType)((offset + nbytes - 1) % BLOCK_SIZE);
+    sType end_block_offset = (sType)((end_offset - 1) % BLOCK_SIZE);
 
-    sType existing_blocks = node->blocks;
-    sType num_blocks_needed = end_block + 1;
-    sType blocks_to_allocate = (num_blocks_needed > existing_blocks) ? (num_blocks_needed - existing_blocks) : 0;
+    sType total_blocks_needed = end_block + 1;
 
-    sType prev_block = 0;
-
-    for(sType i = start_block; i <= end_block; i++)
-    {
-        sType dblock_num;
-        char* buf_read = NULL;
-
-        if(i < existing_blocks)
-        {
-            // Existing block
-            dblock_num = get_datablock_from_inode(node, i, &prev_block);
-            if(dblock_num <= 0)
-            {
+    if (total_blocks_needed > node->blocks) {
+        sType blocks_to_allocate = total_blocks_needed - node->blocks;
+        for (sType i = 0; i < blocks_to_allocate; i++) {
+            sType new_block = allocate_data_block();
+            if (new_block <= 0) {
                 free(node);
-                return (bytes_written == 0) ? -1 : bytes_written;
+                return (bytes_written == 0) ? -ENOSPC : bytes_written;
             }
-            buf_read = read_data_block(dblock_num);
-            if(buf_read == NULL)
-            {
+            if (!add_datablock_to_inode(node, new_block)) {
                 free(node);
-                return (bytes_written == 0) ? -1 : bytes_written;
+                return (bytes_written == 0) ? -EIO : bytes_written;
             }
         }
-        else
-        {
-            // Need to allocate a new block
-            dblock_num = allocate_data_block();
-            if(dblock_num <= 0)
-            {
-                free(node);
-                return (bytes_written == 0) ? -1 : bytes_written;
-            }
-            if(!add_datablock_to_inode(node, dblock_num))
-            {
-                free(node);
-                return (bytes_written == 0) ? -1 : bytes_written;
-            }
-            buf_read = (char*)calloc(BLOCK_SIZE, sizeof(char));
-            if(buf_read == NULL)
-            {
-                free(node);
-                return (bytes_written == 0) ? -ENOMEM : bytes_written;
-            }
-            node->blocks++;
+    }
+
+    sType prev_block = 0;
+    size_t remaining_bytes = nbytes;
+    size_t buffer_offset = 0;
+
+    for (sType i = start_block; i <= end_block; i++) {
+        sType dblock_num = get_datablock_from_inode(node, i, &prev_block);
+        if (dblock_num <= 0) {
+            free(node);
+            return (bytes_written == 0) ? -EIO : bytes_written;
+        }
+
+        char* block_data = read_data_block(dblock_num);
+        if (block_data == NULL) {
+            free(node);
+            return (bytes_written == 0) ? -EIO : bytes_written;
         }
 
         sType block_offset = 0;
-        sType to_write = 0;
+        size_t to_write = 0;
 
-        if(i == start_block && i == end_block)
-        {
+        if (i == start_block && i == end_block) {
             // Single block write
             block_offset = start_block_offset;
-            to_write = nbytes;
-        }
-        else if(i == start_block)
-        {
-            // Start block
+            to_write = remaining_bytes;
+        } else if (i == start_block) {
+            // First block
             block_offset = start_block_offset;
             to_write = BLOCK_SIZE - start_block_offset;
-        }
-        else if(i == end_block)
-        {
-            // End block
+        } else if (i == end_block) {
+            // Last block
             block_offset = 0;
             to_write = end_block_offset + 1;
-        }
-        else
-        {
-            // Middle block
+        } else {
+            // Middle blocks
             block_offset = 0;
             to_write = BLOCK_SIZE;
         }
 
-        // Adjust to_write if remaining bytes are less
-        if(to_write > nbytes - bytes_written)
-        {
-            to_write = nbytes - bytes_written;
+        // Ensure we don't write more than remaining bytes
+        if (to_write > remaining_bytes) {
+            to_write = remaining_bytes;
         }
 
-        memcpy(buf_read + block_offset, buff + bytes_written, to_write);
-        bytes_written += to_write;
+        memcpy(block_data + block_offset, buff + buffer_offset, to_write);
 
-        bool written = write_data_block(dblock_num, buf_read);
-        free(buf_read);
-        if(!written)
-        {
+        // Write the block back to disk
+        if (!write_data_block(dblock_num, block_data)) {
+            free(block_data);
             free(node);
-            return (bytes_written == 0) ? -1 : bytes_written;
+            return (bytes_written == 0) ? -EIO : bytes_written;
         }
-        printf("Block %lld data: %.*s\n", (long long)i, (int)to_write, buf_read + block_offset);
 
+        printf("Block %lld written: %zu bytes at offset %lld\n", (long long)i, to_write, (long long)block_offset);
+
+        free(block_data);
+
+        bytes_written += to_write;
+        buffer_offset += to_write;
+        remaining_bytes -= to_write;
     }
 
-    sType new_file_size = offset + bytes_written;
-    if(new_file_size > node->fileSize)
-    {
-        node->fileSize = new_file_size;
+    // Update file size if needed
+    if (end_offset > node->fileSize) {
+        node->fileSize = end_offset;
     }
 
-    if(bytes_written > 0)
-    {
-        time_t curr_time= time(NULL);
+    // Update modification time
+    if (bytes_written > 0) {
+        time_t curr_time = time(NULL);
         node->mtime = curr_time;
+        node->ctime = curr_time;
     }
 
-    if(!writeINodeToDisk(inum, node))
-    {
+    // Save the inode back to disk
+    if (!writeINodeToDisk(inum, node)) {
         free(node);
-        return -1;
+        return -EIO;
     }
+
     free(node);
     return bytes_written;
 }
@@ -644,7 +628,7 @@ sType fs_readdir(const char* path, void* buff, fuse_fill_dir_t filler)
             struct stat stbuff_data;
             memset(&stbuff_data, 0, sizeof(struct stat));
             struct stat *stbuff = &stbuff_data;
-            inode_to_stat(&file_inode, &stbuff);
+            inode_to_stat(file_inode, stbuff);
             stbuff->st_ino = file_inum;
             // TODO FUSE_FILL_DIR_DEFAULTS undefined
             filler(buff, file_name, stbuff, 0, FUSE_FILL_DIR_DEFAULTS);  
@@ -837,7 +821,7 @@ sType fs_read(const char* path, char* buff, size_t nbytes, off_t offset)
         return -1;
     }
     free(node);
-    printf("Final read buffer: %.*s\n", (int)bytes_read, buff);
+    printf("Fuse read buffer: %.*s\n", (int)bytes_read, buff);
 
     return bytes_read;
 }

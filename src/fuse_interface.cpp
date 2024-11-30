@@ -67,8 +67,9 @@ static int fioc_getattr(const char *path, struct stat *stbuf,
 	// stbuf->st_gid = getgid();
 	// stbuf->st_atime = stbuf->st_mtime = time(NULL);
 	// stbuf->st_ctime = time(NULL);
-     int h= fs_getattr(path, &stbuf);
+     int h= fs_getattr(path, stbuf);
     printf("done with fs_get %d : returned\n\n",h);
+    printf("stat VALUES %ld, %ld\n\n", stbuf->st_atime, stbuf->st_mtime);
     return h;
 }
 
@@ -180,6 +181,7 @@ static int fioc_read(const char *path, char *buf, size_t size,
 	    printf("CALLING FIOC_READ \n\n");
     printf("reading file : %s\n", path);
 	sType nbytes = fs_read(path, buf, size, offset);
+    printf("Final read buffer: %.*s\n", (int)nbytes, buf);
     return nbytes;
 }
 
@@ -339,7 +341,53 @@ static int fioc_lock(const char *path, struct fuse_file_info *fi, int cmd, struc
 }
 
 static int fioc_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi) {
-	return 0;
+    printf("UTIMENS CALLED FOR PATH %s\n\n", path);
+    sType inum = get_inode_of_File(path);
+    if (inum == -1) {
+        return -ENOENT;
+    }
+
+    inodeStruct* inode = loadINodeFromDisk(inum);
+    if (inode == NULL) {
+        return -EIO; 
+    }
+
+    struct timespec current_time;
+    if (clock_gettime(CLOCK_REALTIME, &current_time) == -1) {
+        free(inode);
+        return -EIO;
+    }
+
+    if (tv[0].tv_nsec == UTIME_NOW) {
+        inode->atime = current_time.tv_sec;
+    } else if (tv[0].tv_nsec == UTIME_OMIT) {
+    } else {
+        inode->atime = tv[0].tv_sec;
+    }
+
+    if (tv[1].tv_nsec == UTIME_NOW) {
+        inode->mtime = current_time.tv_sec;
+    } else if (tv[1].tv_nsec == UTIME_OMIT) {
+        // Do not change mtime
+    } else {
+        inode->mtime = tv[1].tv_sec;
+    }
+
+    inode->ctime = current_time.tv_sec;
+
+    printf("Updated inode times:\n");
+    printf("  atime: %ld\n", (long)inode->atime);
+    printf("  mtime: %ld\n", (long)inode->mtime);
+    printf("  ctime: %ld\n", (long)inode->ctime);
+
+
+    if (!writeINodeToDisk(inum, inode)) {
+        free(inode);
+        return -EIO;
+    }
+
+    free(inode);
+    return 0;
 }
 
 static int fioc_bmap(const char *path, size_t blocksize, uint64_t *idx) {
@@ -458,7 +506,7 @@ static const struct fuse_operations fioc_oper = {
 	//.release = fioc_release,
 	// .fsync = fioc_fsync, 
 	// .setxattr = fioc_setxattr,
-	 .getxattr = fioc_getxattr,
+	//.getxattr = fioc_getxattr,
 	// .listxattr = fioc_listxattr,
 	// .removexattr = fioc_removexattr,
 	//.opendir = fioc_opendir,

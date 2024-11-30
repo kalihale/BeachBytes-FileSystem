@@ -61,6 +61,7 @@ bool writeINodeToDisk(sType inodeNum, inodeStruct* inode){
 
     inodeStruct* node= (inodeStruct*)buffer;
     node = node + offset;
+    printf("WRITING TIME %d\n\n", inode->atime);
 
     memcpy(node, inode, sizeof(inodeStruct));
 
