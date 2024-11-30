@@ -14,7 +14,7 @@
 #include <cstdint>
 
 
-#define PERSISTANT_DISK "testPersistant.txt"
+#define PERSISTANT_DISK "/dev/loop4"
 
 typedef int64_t sType;
 
