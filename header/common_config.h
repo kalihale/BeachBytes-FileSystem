@@ -14,7 +14,7 @@
 #include <cstdint>
 
 
-#define PERSISTANT_DISK "/dev/loop4"
+#define PERSISTANT_DISK "/dev/vdb"
 
 typedef int64_t sType;
 
