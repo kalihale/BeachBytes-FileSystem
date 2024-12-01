@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "../header/layerZero.h"
 #include "../header/common_config.h"

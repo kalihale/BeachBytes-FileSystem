@@ -44,6 +44,7 @@ add_definitions(${FUSE3_CFLAGS_OTHER})
 # Add executable and link FUSE3 libraries
 add_executable(cs270 ${src} ${header})
 add_executable(setUpDisk ${src2} ${header})
+add_executable(testOpen test/testOpen.cpp)
 
 include_directories(/usr/include)
 
