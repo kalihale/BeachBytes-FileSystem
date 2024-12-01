@@ -164,6 +164,7 @@ static int fioc_open(const char *path, struct fuse_file_info *fi)
 	if (debug)
 	    printf("PATH PASSED IN %s\n", path);
 	ssize_t inum = fs_openFile(path, fi->flags);
+    fi->direct_io = 1;
     if(inum <= -1)
     {
         return inum;
