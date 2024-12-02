@@ -18,9 +18,9 @@
 
 typedef int64_t sType;
 
-#define BLOCK_SIZE (sType)4096
-#define FS_SIZE 409600000
-#define BLOCK_COUNT ((sType)(FS_SIZE/BLOCK_SIZE))
+#define BLOCK_SIZE 4096
+#define FS_SIZE (1024LL*1024LL*1024LL*40LL) // 2GB
+#define BLOCK_COUNT (FS_SIZE/BLOCK_SIZE)
 #define ADDRESS_SIZE sizeof(sType) 
 
 #define NUM_DIRECT_BLOCKS  ((uint32_t)10)
