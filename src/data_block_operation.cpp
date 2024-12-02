@@ -16,12 +16,15 @@ sType allocate_data_block()
         char* tempBlock=(char*)calloc(sizeof(char),BLOCK_SIZE);
         if(!write_data_block(allocated_bk_no, tempBlock))
         {
+	     free(tempBlock);
             return -1;
         }
         if(!fs_write_superblock())
         {
+		free(tempBlock);
             return -1;
         }
+	free(tmepBlock);
     }
     else{
         allocated_bk_no=fs_superblock->freelist_head;
