@@ -24,6 +24,7 @@ bool bootUpFileSytem()
     //printf("got root dir %d %d\n",root_dir->is_allocated,root_dir->filesCount);
     if(root_dir && root_dir->is_allocated && root_dir->filesCount >= 2)
     {
+        free(root_dir);
         return true;
     }
 
@@ -117,6 +118,7 @@ sType fs_chmod(const char* path, mode_t mode)
     node->i_mode = mode;
     if(!writeINodeToDisk(inum, node))
     {
+        free(node);
         return -1;
     }
     return 0;
@@ -182,6 +184,7 @@ sType create_new_file(const char* const path, inodeStruct** buff, mode_t mode, s
     char child_name[path_len+1];
     if(!copy_file_name(child_name, path, path_len))
     {
+        free(parent_inode);
         return -1;
     }
 
@@ -353,6 +356,7 @@ sType fs_unlink(const char* path)
     sType parent_inum = get_inode_of_File(parent_path);
     if(parent_inum == -1)
     {
+        free(node);
         return -1;
     }
     inodeStruct* parent = loadINodeFromDisk(parent_inum);
@@ -391,6 +395,7 @@ sType fs_truncate(const char* path, off_t length)
     if(!node){return -EACCES; }
     if(!(bool)(node->i_mode & S_IWUSR))
     {
+        free(node);
         return -EACCES;
     }
 
@@ -411,6 +416,7 @@ sType fs_truncate(const char* path, off_t length)
         char* zeros = (char*)calloc(1, bytes_to_add);
         sType written = fs_write(path, zeros, bytes_to_add, node->fileSize);
         free(node);
+        free(zeros);
         if(written == bytes_to_add)
         {
             return 0;
