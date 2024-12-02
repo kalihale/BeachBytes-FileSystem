@@ -26,5 +26,7 @@ make
 
 ## Resources consulted
 https://libfuse.github.io/doxygen/
+
 https://github.com/libfuse/libfuse
+
 https://www.unix.com/man-page-collection.php?code=301&os=linux
