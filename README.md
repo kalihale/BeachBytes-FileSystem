@@ -1,4 +1,4 @@
-# BeachBytes CS270 Project
+# BeachBytes FileSystem Project
 
 
 ## To Compile in release mode
